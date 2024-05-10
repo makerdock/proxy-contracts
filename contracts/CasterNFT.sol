@@ -9,6 +9,14 @@ import {InvalidAction, TokenSupplyExceeded, InsufficientBalance, InsufficientFun
 
 contract CasterNFT is ERC1155, Ownable, Pausable {
     address public constant TEAM_NFT_CONTRACT = address(0);
+
+    address public constant TREAUSRY = address(0);
+    address public constant POOL_ADDRESS = address(0);
+
+    uint256 public constant TREAUSRY_CUT = 200; // 200 / 100 = 2%
+    uint256 public constant CREATOR_CUT = 600; // 600 / 100 = 6%
+    uint256 public constant POOL_CUT = 200; // 200 / 100 = 2%
+
     uint256 public constant MAX_SUPPLY = 500;
     uint256 public constant PRICE = 0.1 ether;
     uint256 public constant PRICE_MULTIPLIER = 150;
@@ -53,8 +61,13 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
         }
 
         tokenSupply[id] += amount;
-
         tokenPrice[id] = (tokenPrice[id] * PRICE_MULTIPLIER) / 100;
+
+        uint256 treasuryCut = (totalPrice * TREAUSRY_CUT) / 1000;
+        uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
+
+        payable(TREAUSRY).transfer(treasuryCut);
+        payable(POOL_ADDRESS).transfer(poolCut);
 
         _mint(account, id, amount, data);
     }
@@ -83,6 +96,12 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
             tokenSupply[ids[i]] += amounts[i];
             tokenPrice[ids[i]] = (tokenPrice[ids[i]] * PRICE_MULTIPLIER) / 100;
         }
+
+        uint256 treasuryCut = (totalPrice * TREAUSRY_CUT) / 1000;
+        uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
+
+        payable(TREAUSRY).transfer(treasuryCut);
+        payable(POOL_ADDRESS).transfer(poolCut);
 
         _mintBatch(account, ids, amounts, data);
     }
