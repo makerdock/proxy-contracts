@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.25;
 
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
@@ -13,7 +12,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
     address public constant TREAUSRY = address(0);
     address public constant POOL_ADDRESS = address(0);
     address public constant LIQUIDITY_ADDRESS = address(0);
-    // address public constant ROYALTY_ADDRESS = address(0);
+    address public constant ROYALTY_ADDRESS = address(0);
 
     uint256 public constant TREAUSRY_CUT = 200; // 200 / 100 = 2%
     uint256 public constant CREATOR_CUT = 600; // 600 / 100 = 6%
@@ -98,10 +97,9 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
             revert InsufficientFunds(msg.sender, tokenPrice[id] * amount);
         }
 
-        tokenPrice[id] =
-            tokenPrice[id] +
-            (tokenPrice[id] * PRICE_MULTIPLIER) /
-            100;
+        tokenPrice[id] += (tokenPrice[id] * PRICE_MULTIPLIER) / 100;
+
+        distributeFunds(msg.value);
 
         safeTransferFrom(address(this), msg.sender, id, amount, data);
     }
@@ -115,23 +113,14 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
             revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
         }
 
-        uint256 totalPrice = tokenPrice[id] * amount;
-
-        if (msg.value < totalPrice) {
-            revert InsufficientFunds(msg.sender, totalPrice);
+        if (msg.value < tokenPrice[id]) {
+            revert InsufficientFunds(msg.sender, tokenPrice[id]);
         }
 
         tokenSupply[id] += amount;
-        tokenPrice[id] =
-            tokenPrice[id] +
-            (tokenPrice[id] * PRICE_MULTIPLIER) /
-            100;
+        tokenPrice[id] += (tokenPrice[id] * PRICE_MULTIPLIER) / 100;
 
-        uint256 treasuryCut = (totalPrice * TREAUSRY_CUT) / 1000;
-        uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
-
-        payable(TREAUSRY).transfer(treasuryCut);
-        payable(POOL_ADDRESS).transfer(poolCut);
+        distributeFunds(tokenPrice[id]);
 
         _mint(msg.sender, id, amount, data);
     }
@@ -160,13 +149,19 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
             tokenPrice[ids[i]] = (tokenPrice[ids[i]] * PRICE_MULTIPLIER) / 100;
         }
 
+        distributeFunds(totalPrice);
+
+        _mintBatch(msg.sender, ids, amounts, data);
+    }
+
+    function distributeFunds(uint256 totalPrice) internal {
         uint256 treasuryCut = (totalPrice * TREAUSRY_CUT) / 1000;
         uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
+        uint256 creatorCut = (totalPrice * CREATOR_CUT) / 1000;
 
         payable(TREAUSRY).transfer(treasuryCut);
         payable(POOL_ADDRESS).transfer(poolCut);
-
-        _mintBatch(msg.sender, ids, amounts, data);
+        payable(ROYALTY_ADDRESS).transfer(creatorCut);
     }
 
     function _burn(address from, uint256 id) internal virtual {
