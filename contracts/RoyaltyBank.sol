@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 contract RoyaltyBank {
     // TODO: figure a way to make this safer
     // or we can drive claiming through backend
+    // or, we can calculate the smart contract address via the FID for a creator and then store it accordingly
     mapping(uint256 => uint256) public royalties;
 
     function updateRewardsMapping(
