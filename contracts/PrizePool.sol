@@ -15,7 +15,7 @@ contract PrizePool is BackendGateway {
             revert InvalidParams();
         }
 
-        for (uint256 i = 0; i < _winningsAddresses.lengt; i++) {
+        for (uint256 i = 0; i < _winningAddresses.length; i++) {
             // doing a > 0 check instead of == 0 to check for undefined as well
             if (winnerMapping[_winningAddresses[i]] > 0) {
                 winnerMapping[_winningAddresses[i]] += _winningAmount[i];
@@ -26,9 +26,9 @@ contract PrizePool is BackendGateway {
     }
 
     function claimWinnings() public {
-        if (_winnerMapping[msg.sender] > 0) {
-            payable(msg.sender).transfer(_winnerMapping[msg.sender]);
-            delete _winnerMapping[msg.sender];
+        if (winnerMapping[msg.sender] > 0) {
+            payable(msg.sender).transfer(winnerMapping[msg.sender]);
+            delete winnerMapping[msg.sender];
         }
     }
 }

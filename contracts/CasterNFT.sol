@@ -4,9 +4,11 @@ pragma solidity ^0.8.25;
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import {BackendGateway} from "./utils/BackendGateway.sol";
 import {InvalidAction, TokenSupplyExceeded, InsufficientBalance, InsufficientFunds, OutOfRangeRating} from "./utils/Errors.sol";
+import {ITeamNFT} from "./interfaces/ITeamNFT.sol";
 
-contract CasterNFT is ERC1155, Ownable, Pausable {
+contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     address public constant TEAM_NFT_CONTRACT = address(0);
 
     address public constant TREAUSRY = address(0);
@@ -36,29 +38,41 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
         return tokenSupply[id];
     }
 
-    function stakeNFTs(uint256[] memory ids, uint256[] memory amounts) public {
+    function stakeNFTs(
+        uint256[] memory _ids,
+        uint256[] memory _amounts
+    ) public {
         uint256 totalRating = 0;
 
-        for (uint256 i = 0; i < ids.length; i++) {
-            if (amounts[i] > balanceOf(msg.sender, ids[i])) {
-                revert InsufficientBalance(msg.sender, ids[i], amounts[i]);
+        for (uint256 i = 0; i < _ids.length; i++) {
+            if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
+                revert InsufficientBalance(msg.sender, _ids[i], _amounts[i]);
             }
 
-            totalRating += tokenRating[ids[i]];
+            totalRating += tokenRating[_ids[i]];
         }
 
         if (totalRating > TEAM_RATINGS_CAP) {
             revert OutOfRangeRating(totalRating, TEAM_RATINGS_CAP);
         }
 
-        emit StakeNFTs(msg.sender, ids, amounts);
-        safeBatchTransferFrom(msg.sender, TEAM_NFT_CONTRACT, ids, amounts, "");
+        emit StakeNFTs(msg.sender, _ids, _amounts);
+        safeBatchTransferFrom(
+            msg.sender,
+            TEAM_NFT_CONTRACT,
+            _ids,
+            _amounts,
+            ""
+        );
+        ITeamNFT teamNFTContract = ITeamNFT(TEAM_NFT_CONTRACT);
+
+        teamNFTContract.stakedNFTs(msg.sender, _ids, _amounts);
     }
 
     function updateRatings(
         uint256[] memory ids,
         uint256[] memory ratings
-    ) public onlyOwner {
+    ) public backendGateway {
         for (uint256 i = 0; i < ids.length; i++) {
             tokenRating[ids[i]] = ratings[i];
         }
@@ -113,7 +127,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
             revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
         }
 
-        if (msg.value < tokenPrice[id]) {
+        if (msg.value < tokenPrice[id] * amount) {
             revert InsufficientFunds(msg.sender, tokenPrice[id]);
         }
 
@@ -161,6 +175,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable {
 
         payable(TREAUSRY).transfer(treasuryCut);
         payable(POOL_ADDRESS).transfer(poolCut);
+        // define better
         payable(ROYALTY_ADDRESS).transfer(creatorCut);
     }
 
