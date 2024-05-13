@@ -48,7 +48,7 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
         uint256 _tokenId,
         uint256[] memory _newIds,
         uint256[] memory _newAmounts
-    ) public {
+    ) public view {
         if (ownerOf(_tokenId) != msg.sender) {
             revert UnAuthorizedAction(msg.sender);
         }
