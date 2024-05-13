@@ -58,16 +58,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
         emit StakeNFTs(msg.sender, _ids, _amounts);
 
-        safeBatchTransferFrom(
-            msg.sender,
-            TEAM_NFT_CONTRACT,
-            _ids,
-            _amounts,
-            ""
-        );
-
         ITeamNFT teamNFTContract = ITeamNFT(TEAM_NFT_CONTRACT);
-        teamNFTContract.stakedNFTs(msg.sender, _ids, _amounts);
+        teamNFTContract.stakeNFTs(msg.sender, _ids, _amounts);
     }
 
     function updateRatings(

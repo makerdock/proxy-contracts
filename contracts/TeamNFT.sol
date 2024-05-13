@@ -17,16 +17,24 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
 
     uint256 public tokenId = 0;
 
-    function stakedNFTs(
+    function stakeNFTs(
         address _user,
         uint256[] memory _ids,
         uint256[] memory _amounts
     ) public {
+        IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT);
+
+        casterNFTContract.safeBatchTransferFrom(
+            msg.sender,
+            address(this),
+            _ids,
+            _amounts,
+            ""
+        );
+
         tokenId++;
 
         for (uint256 i = 0; i < _ids.length; i++) {
-            IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT);
-
             // Checking if the NFT is transferred
             // Need to confirm if it's in the same transaction then will it be transferred
             // and is this check is right way
