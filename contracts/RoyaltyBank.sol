@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-contract RoyaltyBank {
-    // TODO: figure a way to make this safer
-    // or we can drive claiming through backend
-    // or, we can calculate the smart contract address via the FID for a creator and then store it accordingly
+import {BackendGateway} from "./utils/BackendGateway.sol";
+
+contract RoyaltyBank is BackendGateway {
     mapping(uint256 => uint256) public royalties;
 
+    // How to secure this?
+    // maybe whitelist it?
     function updateRewardsMapping(
         uint256[] memory ids,
         uint256[] memory rewards
@@ -16,8 +17,11 @@ contract RoyaltyBank {
         }
     }
 
-    function claimReward(uint256 id) public {
+    function claimReward(
+        uint256 id,
+        address creatorAddress
+    ) public backendGateway {
         royalties[id] = 0;
-        payable(msg.sender).transfer(royalties[id]);
+        payable(creatorAddress).transfer(royalties[id]);
     }
 }

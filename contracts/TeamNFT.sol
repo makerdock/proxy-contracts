@@ -24,6 +24,15 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
     ) public {
         IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT);
 
+        for (uint256 i = 0; i < _ids.length; i++) {
+            // Checking if the NFT is transferred
+            // Need to confirm if it's in the same transaction then will it be transferred
+            // and is this check is right way
+            if (_amounts[i] >= casterNFTContract.balanceOf(_user, _ids[i])) {
+                revert UnAuthorizedAction(msg.sender);
+            }
+        }
+
         casterNFTContract.safeBatchTransferFrom(
             msg.sender,
             address(this),
@@ -34,21 +43,13 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
 
         tokenId++;
 
-        for (uint256 i = 0; i < _ids.length; i++) {
-            // Checking if the NFT is transferred
-            // Need to confirm if it's in the same transaction then will it be transferred
-            // and is this check is right way
-            if (_amounts[i] >= casterNFTContract.balanceOf(_user, _ids[i])) {
-                revert UnAuthorizedAction(msg.sender);
-            }
-        }
-
         StakedNFT memory userStakedNFTs = StakedNFT({
             ids: _ids,
             amounts: _amounts
         });
 
         tokenIdToStakedNFTsMapping[tokenId] = userStakedNFTs;
+
         _mint(_user, tokenId);
     }
 
@@ -71,24 +72,24 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
         // I"LL DO THIS AT LAST
     }
 
-    function unstakeNFTs(
-        address user,
-        uint256 _tokenId,
-        uint256[] memory _ids,
-        uint256[] memory amounts
-    ) public {
+    function unstakeNFTs(uint256 _tokenId) public {
         IERC1155 teamNFTContract = IERC1155(address(this));
 
-        if (!(user == msg.sender && ownerOf(_tokenId) == user)) {
+        if (ownerOf(_tokenId) != msg.sender) {
             revert UnAuthorizedAction(msg.sender);
         }
 
-        for (uint256 i = 0; i < _ids.length; i++) {
+        StakedNFT memory userStakedNFTs = tokenIdToStakedNFTsMapping[_tokenId];
+
+        for (uint256 i = 0; i < userStakedNFTs.ids.length; i++) {
             // Checking if the NFT is transferred
             // Need to confirm if it's in the same transaction then will it be transferred
             // and is this check is right way
             if (
-                teamNFTContract.balanceOf(address(this), _ids[i]) > amounts[i]
+                teamNFTContract.balanceOf(
+                    address(this),
+                    userStakedNFTs.ids[i]
+                ) > userStakedNFTs.amounts[i]
             ) {
                 revert UnAuthorizedAction(msg.sender);
             }
@@ -96,10 +97,12 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
 
         teamNFTContract.safeBatchTransferFrom(
             address(this),
-            user,
-            _ids,
-            amounts,
+            msg.sender,
+            userStakedNFTs.ids,
+            userStakedNFTs.amounts,
             ""
         );
+
+        _burn(tokenId);
     }
 }

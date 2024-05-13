@@ -13,8 +13,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
     address public constant TREAUSRY = address(0);
     address public constant POOL_ADDRESS = address(0);
-    address public constant LIQUIDITY_ADDRESS = address(0);
     address public constant ROYALTY_ADDRESS = address(0);
+    // address public constant LIQUIDITY_ADDRESS = address(0);
 
     uint256 public constant TREAUSRY_CUT = 200; // 200 / 100 = 2%
     uint256 public constant CREATOR_CUT = 600; // 600 / 100 = 6%
@@ -114,7 +114,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public payable onlyOwner {
+    ) public payable {
         if (currentSupply(id) < MAX_SUPPLY) {
             revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
         }
@@ -135,7 +135,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) public payable onlyOwner {
+    ) public payable {
         uint256 totalPrice = 0;
 
         for (uint256 i = 0; i < ids.length; i++) {
