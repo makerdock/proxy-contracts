@@ -52,11 +52,12 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             totalRating += tokenRating[_ids[i]];
         }
 
-        if (totalRating > TEAM_RATINGS_CAP) {
+        if (totalRating > TEAM_RATINGS_CAP || _ids.length > 5) {
             revert OutOfRangeRating(totalRating, TEAM_RATINGS_CAP);
         }
 
         emit StakeNFTs(msg.sender, _ids, _amounts);
+
         safeBatchTransferFrom(
             msg.sender,
             TEAM_NFT_CONTRACT,
@@ -64,8 +65,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             _amounts,
             ""
         );
-        ITeamNFT teamNFTContract = ITeamNFT(TEAM_NFT_CONTRACT);
 
+        ITeamNFT teamNFTContract = ITeamNFT(TEAM_NFT_CONTRACT);
         teamNFTContract.stakedNFTs(msg.sender, _ids, _amounts);
     }
 
@@ -94,7 +95,6 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         }
 
         payable(msg.sender).transfer(fundsToSendToUser);
-
         safeTransferFrom(msg.sender, address(this), id, amount, "");
     }
 
@@ -102,7 +102,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public payable onlyOwner {
+    ) public payable {
         if (balanceOf(address(this), id) < amount) {
             revert InsufficientBalance(address(this), id, amount);
         }
