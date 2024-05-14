@@ -24,7 +24,7 @@ contract PrizePool is BackendGateway {
             }
         }
     }
-
+    //Todo: Change Trasfer to call
     function claimWinnings() public {
         if (winnerMapping[msg.sender] > 0) {
             payable(msg.sender).transfer(winnerMapping[msg.sender]);

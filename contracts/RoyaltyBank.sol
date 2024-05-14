@@ -6,6 +6,8 @@ import {BackendGateway} from "./utils/BackendGateway.sol";
 contract RoyaltyBank is BackendGateway {
     mapping(uint256 => uint256) public royalties;
 
+    // 1434 <> 500 DEGEN
+
     // How to secure this?
     // maybe whitelist it?
     function updateRewardsMapping(
