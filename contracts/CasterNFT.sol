@@ -28,9 +28,9 @@ contract CasterNFT is
     address public ROYALTY_ADDRESS = address(0);
     // address public constant LIQUIDITY_ADDRESS = address(0);
 
-    uint256 public constant TREAUSRY_CUT = 200; // 200 / 100 = 2%
-    uint256 public constant CREATOR_CUT = 600; // 600 / 100 = 6%
-    uint256 public constant POOL_CUT = 200; // 200 / 100 = 2%
+    uint256 public constant TREAUSRY_CUT = 20; // 200 / 100 = 2%
+    uint256 public constant CREATOR_CUT = 60; // 600 / 100 = 6%
+    uint256 public constant POOL_CUT = 20; // 200 / 100 = 2%
 
     uint256 public constant MAX_SUPPLY = 500;
     uint256 public constant PRICE = 80;
@@ -111,9 +111,14 @@ contract CasterNFT is
             fundsToSendToUser += estimatedBondingPrice;
         }
 
+        console.log("Funds to send to User", fundsToSendToUser);
+
         distributeFunds(fundsToSendToUser);
 
-        uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 91) / 100;
+        uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
+
+        console.log("Left funds", leftFunds);
+
         erc20Instance.transfer(msg.sender, leftFunds);
 
         safeTransferFrom(msg.sender, address(this), id, amount, "");
@@ -144,17 +149,23 @@ contract CasterNFT is
             revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
         }
 
-        uint256 estimatedBondingPrice = getBondingCurvePrice(
-            tokenSupply[id] + amount
-        );
+        uint256 mintPrice = 0;
 
-        uint256 mintPrice = tokenSupply[id] == 0 && amount == 1
-            ? 80
-            : estimatedBondingPrice;
+        if (tokenSupply[id] == 0 && amount == 1) {
+            mintPrice = PRICE;
+        } else {
+            for (uint256 i = 0; i < amount; i++) {
+                uint256 estimatedBondingPrice = getBondingCurvePrice(
+                    tokenSupply[id] + (i + 1)
+                );
+                mintPrice += estimatedBondingPrice;
+            }
+        }
+
+        console.log("Mint price", mintPrice);
 
         erc20Instance.transferFrom(msg.sender, address(this), mintPrice);
-
-        // distributeFunds(mintPrice);
+        distributeFunds(mintPrice);
         _mint(msg.sender, id, amount, "");
 
         tokenSupply[id] += amount;
