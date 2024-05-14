@@ -7,13 +7,25 @@ import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {BackendGateway} from "./utils/BackendGateway.sol";
 import {InvalidAction, TokenSupplyExceeded, InsufficientBalance, InsufficientFunds, OutOfRangeRating} from "./utils/Errors.sol";
 import {ITeamNFT} from "./interfaces/ITeamNFT.sol";
+import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "hardhat/console.sol";
 
-contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
-    address public constant TEAM_NFT_CONTRACT = address(0);
+contract CasterNFT is
+    ERC1155,
+    Ownable,
+    Pausable,
+    BackendGateway,
+    ERC1155Holder
+{
+    address public TEAM_NFT_CONTRACT = address(0);
+    IERC20 erc20Instance;
 
-    address public constant TREAUSRY = address(0);
-    address public constant POOL_ADDRESS = address(0);
-    address public constant ROYALTY_ADDRESS = address(0);
+    address public TREAUSRY = address(0);
+    address public POOL_ADDRESS = address(0);
+    address public ROYALTY_ADDRESS = address(0);
     // address public constant LIQUIDITY_ADDRESS = address(0);
 
     uint256 public constant TREAUSRY_CUT = 200; // 200 / 100 = 2%
@@ -32,10 +44,20 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
     event StakeNFTs(address indexed staker, uint256[] ids, uint256[] amounts);
 
-    constructor() ERC1155("https://ipfs.io/ipfs/QmZ9") {}
+    constructor(address _erc20Address) ERC1155("https://ipfs.io/ipfs/QmZ9") {
+        erc20Instance = IERC20(_erc20Address);
+    }
 
     function currentSupply(uint256 id) public view returns (uint256) {
         return tokenSupply[id];
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC1155Holder, ERC1155) returns (bool) {
+        return
+            interfaceId == type(IERC1155).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     function stakeNFTs(
@@ -46,12 +68,16 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
+                console.log("Insufficient funds");
                 revert InsufficientBalance(msg.sender, _ids[i], _amounts[i]);
             }
 
             totalRating += tokenRating[_ids[i]];
         }
 
+        console.log("ratings -> ", totalRating);
+
+        //Todo: Check the number of NFTs per team => id*amount
         if (totalRating > TEAM_RATINGS_CAP || _ids.length > 5) {
             revert OutOfRangeRating(totalRating, TEAM_RATINGS_CAP);
         }
@@ -85,7 +111,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
                 (tokenPrice[id] * PRICE_MULTIPLIER) /
                 100;
         }
-
+        // TODO: send eth via .call{ ... }
         payable(msg.sender).transfer(fundsToSendToUser);
         safeTransferFrom(msg.sender, address(this), id, amount, "");
     }
@@ -110,25 +136,29 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         safeTransferFrom(address(this), msg.sender, id, amount, data);
     }
 
-    function mint(
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) public payable {
-        if (currentSupply(id) < MAX_SUPPLY) {
+    function mint(uint256 id, uint256 amount) public payable {
+        if (currentSupply(id) == MAX_SUPPLY) {
             revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
         }
 
-        if (msg.value < tokenPrice[id] * amount) {
-            revert InsufficientFunds(msg.sender, tokenPrice[id]);
+        if (tokenPrice[id] == 0) {
+            tokenPrice[id] = 0.01 ether;
         }
 
+        uint256 estimatedBondingPrice = getBondingCurvePrice(
+            tokenSupply[id] + amount
+        );
+
+        if (msg.value < estimatedBondingPrice) {
+            revert InsufficientFunds(msg.sender, estimatedBondingPrice);
+        }
+
+        distributeFunds(msg.value);
+
+        _mint(msg.sender, id, amount, "");
+
         tokenSupply[id] += amount;
-        tokenPrice[id] += (tokenPrice[id] * PRICE_MULTIPLIER) / 100;
-
-        distributeFunds(tokenPrice[id]);
-
-        _mint(msg.sender, id, amount, data);
+        tokenPrice[id] = estimatedBondingPrice;
     }
 
     function mintBatch(
@@ -165,10 +195,67 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
         uint256 creatorCut = (totalPrice * CREATOR_CUT) / 1000;
 
-        payable(TREAUSRY).transfer(treasuryCut);
-        payable(POOL_ADDRESS).transfer(poolCut);
-        // define better
-        payable(ROYALTY_ADDRESS).transfer(creatorCut);
+        console.log("sending funds", treasuryCut, poolCut, creatorCut);
+
+        // TODO: send eth via .call{ ... }
+        (bool sentToTreasury, bytes memory data) = TREAUSRY.call{
+            value: treasuryCut
+        }("");
+        require(sentToTreasury, "Failed to send to treasury");
+
+        (bool sentToPool, bytes memory _pData) = POOL_ADDRESS.call{
+            value: poolCut
+        }("");
+        require(sentToPool, "Failed to send to Pool");
+
+        // (bool sentToRoyalty, bytes memory _rData) = ROYALTY_ADDRESS.call{value: creatorCut}("");
+        // require(sentToRoyalty, "Failed to send to creator");
+    }
+
+    function updateTreasuryAddress(
+        address _newTreasuryAddress
+    ) public onlyOwner {
+        TREAUSRY = _newTreasuryAddress;
+    }
+
+    function getMintPriceForToken(
+        uint256 _tokenId,
+        uint256 _amount
+    ) public view returns (uint256) {
+        uint256 totalPrice = 0;
+        uint256 tempCurrentSupply = tokenSupply[_tokenId];
+
+        for (uint256 i = 0; i < _amount; i++) {
+            if (tempCurrentSupply + i >= MAX_SUPPLY) {
+                revert TokenSupplyExceeded(_tokenId, MAX_SUPPLY, msg.sender);
+            }
+
+            uint256 bondingPrice = getBondingCurvePrice(tempCurrentSupply + i);
+
+            totalPrice += bondingPrice;
+        }
+
+        return totalPrice;
+    }
+
+    function getBondingCurvePrice(
+        uint256 _currentTokenId
+    ) internal pure returns (uint256) {
+        // TODO: @abhishek fix the calculation
+        // (currentToken ** 1.05) x 60
+        return (_currentTokenId ** 1) * 60;
+    }
+
+    function updatePoolAddress(address _newPoolAddress) public onlyOwner {
+        POOL_ADDRESS = _newPoolAddress;
+    }
+
+    function updateTeamNFTAddress(address _newTeamNFTAddress) public onlyOwner {
+        TEAM_NFT_CONTRACT = _newTeamNFTAddress;
+    }
+
+    function updateRoyaltyAddress(address _newRoyaltyAddress) public onlyOwner {
+        ROYALTY_ADDRESS = _newRoyaltyAddress;
     }
 
     function _burn(address from, uint256 id) internal virtual {

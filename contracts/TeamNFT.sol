@@ -4,9 +4,10 @@ pragma solidity ^0.8.25;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {UnAuthorizedAction} from "./utils/Errors.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TeamNFT is ERC721("TEAM_NFT", "TN") {
-    address public constant CASTER_NFT_CONTRACT = address(0);
+contract TeamNFT is Ownable, ERC721("TEAM_NFT", "TN") {
+    address public CASTER_NFT_CONTRACT = address(0);
 
     struct StakedNFT {
         uint256[] ids;
@@ -16,6 +17,10 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
     mapping(uint256 => StakedNFT) private tokenIdToStakedNFTsMapping;
 
     uint256 public tokenId = 0;
+
+    function updateCasterNFTAddress(address _newCasterNFT) public onlyOwner {
+        CASTER_NFT_CONTRACT = _newCasterNFT;
+    }
 
     function stakeNFTs(
         address _user,
@@ -34,7 +39,7 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
         }
 
         casterNFTContract.safeBatchTransferFrom(
-            msg.sender,
+            _user,
             address(this),
             _ids,
             _amounts,
@@ -71,6 +76,7 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
         // IRRITATING FUNCTION
         // I"LL DO THIS AT LAST
     }
+    //TODO: Implement ERC1155 Send + Receive
 
     function unstakeNFTs(uint256 _tokenId) public {
         IERC1155 teamNFTContract = IERC1155(address(this));
@@ -80,6 +86,12 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
         }
 
         StakedNFT memory userStakedNFTs = tokenIdToStakedNFTsMapping[_tokenId];
+
+        if (
+            userStakedNFTs.amounts.length == 0 || userStakedNFTs.ids.length == 0
+        ) {
+            revert UnAuthorizedAction(msg.sender);
+        }
 
         for (uint256 i = 0; i < userStakedNFTs.ids.length; i++) {
             // Checking if the NFT is transferred
@@ -104,5 +116,6 @@ contract TeamNFT is ERC721("TEAM_NFT", "TN") {
         );
 
         _burn(tokenId);
+        delete tokenIdToStakedNFTsMapping[_tokenId];
     }
 }
