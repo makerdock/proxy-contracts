@@ -20,9 +20,9 @@ contract CasterNFT is
     BackendGateway,
     ERC1155Holder
 {
-    address public TEAM_NFT_CONTRACT = address(0);
-    IERC20 erc20Instance;
+    IERC20 public erc20Instance;
 
+    address public TEAM_NFT_CONTRACT = address(0);
     address public TREAUSRY = address(0);
     address public POOL_ADDRESS = address(0);
     address public ROYALTY_ADDRESS = address(0);
@@ -33,7 +33,7 @@ contract CasterNFT is
     uint256 public constant POOL_CUT = 200; // 200 / 100 = 2%
 
     uint256 public constant MAX_SUPPLY = 500;
-    uint256 public constant PRICE = 0.1 ether;
+    uint256 public constant PRICE = 80;
     uint256 public constant PRICE_MULTIPLIER = 150;
     uint256 public constant TEAM_RATINGS_CAP = 250;
 
@@ -105,35 +105,38 @@ contract CasterNFT is
         uint256 fundsToSendToUser = 0;
 
         for (uint256 i = 0; i < amount; i++) {
-            fundsToSendToUser += tokenPrice[id];
-            tokenPrice[id] =
-                tokenPrice[id] -
-                (tokenPrice[id] * PRICE_MULTIPLIER) /
-                100;
+            uint256 estimatedBondingPrice = getBondingCurvePrice(
+                tokenSupply[id] - i + 1
+            );
+            fundsToSendToUser += estimatedBondingPrice;
         }
-        // TODO: send eth via .call{ ... }
-        payable(msg.sender).transfer(fundsToSendToUser);
+
+        distributeFunds(fundsToSendToUser);
+
+        uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 91) / 100;
+        erc20Instance.transfer(msg.sender, leftFunds);
+
         safeTransferFrom(msg.sender, address(this), id, amount, "");
     }
 
-    function mintForfeitedNFT(
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) public payable {
+    function mintForfeitedNFT(uint256 id, uint256 amount) public payable {
         if (balanceOf(address(this), id) < amount) {
             revert InsufficientBalance(address(this), id, amount);
         }
 
-        if (msg.value < tokenPrice[id] * amount) {
-            revert InsufficientFunds(msg.sender, tokenPrice[id] * amount);
-        }
+        uint256 estimatedBondingPrice = getBondingCurvePrice(
+            tokenSupply[id] + amount
+        );
+        erc20Instance.transferFrom(
+            msg.sender,
+            address(this),
+            estimatedBondingPrice
+        );
 
-        tokenPrice[id] += (tokenPrice[id] * PRICE_MULTIPLIER) / 100;
+        distributeFunds(estimatedBondingPrice);
 
-        distributeFunds(msg.value);
-
-        safeTransferFrom(address(this), msg.sender, id, amount, data);
+        tokenSupply[id] += amount;
+        safeTransferFrom(address(this), msg.sender, id, amount, "");
     }
 
     function mint(uint256 id, uint256 amount) public payable {
@@ -141,75 +144,58 @@ contract CasterNFT is
             revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
         }
 
-        if (tokenPrice[id] == 0) {
-            tokenPrice[id] = 0.01 ether;
-        }
-
         uint256 estimatedBondingPrice = getBondingCurvePrice(
             tokenSupply[id] + amount
         );
 
-        if (msg.value < estimatedBondingPrice) {
-            revert InsufficientFunds(msg.sender, estimatedBondingPrice);
-        }
+        uint256 mintPrice = tokenSupply[id] == 0 && amount == 1
+            ? 80
+            : estimatedBondingPrice;
 
-        distributeFunds(msg.value);
+        erc20Instance.transferFrom(msg.sender, address(this), mintPrice);
 
+        // distributeFunds(mintPrice);
         _mint(msg.sender, id, amount, "");
 
         tokenSupply[id] += amount;
-        tokenPrice[id] = estimatedBondingPrice;
     }
 
     function mintBatch(
         uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
+        uint256[] memory amounts
     ) public payable {
         uint256 totalPrice = 0;
 
         for (uint256 i = 0; i < ids.length; i++) {
-            if (currentSupply(ids[i]) < MAX_SUPPLY) {
-                revert TokenSupplyExceeded(ids[i], MAX_SUPPLY, msg.sender);
-            }
+            uint256 bondingPrice = getBondingCurvePrice(
+                tokenSupply[ids[i]] + amounts[i]
+            );
 
-            totalPrice += tokenPrice[ids[i]] * amounts[i];
+            totalPrice += bondingPrice;
         }
 
         if (msg.value < totalPrice) {
             revert InsufficientFunds(msg.sender, totalPrice);
         }
 
+        distributeFunds(totalPrice);
+        _mintBatch(msg.sender, ids, amounts, "");
+
         for (uint256 i = 0; i < ids.length; i++) {
             tokenSupply[ids[i]] += amounts[i];
-            tokenPrice[ids[i]] = (tokenPrice[ids[i]] * PRICE_MULTIPLIER) / 100;
         }
-
-        distributeFunds(totalPrice);
-
-        _mintBatch(msg.sender, ids, amounts, data);
     }
 
-    function distributeFunds(uint256 totalPrice) internal {
+    function distributeFunds(uint256 totalPrice) public {
         uint256 treasuryCut = (totalPrice * TREAUSRY_CUT) / 1000;
         uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
         uint256 creatorCut = (totalPrice * CREATOR_CUT) / 1000;
 
         console.log("sending funds", treasuryCut, poolCut, creatorCut);
 
-        // TODO: send eth via .call{ ... }
-        (bool sentToTreasury, bytes memory data) = TREAUSRY.call{
-            value: treasuryCut
-        }("");
-        require(sentToTreasury, "Failed to send to treasury");
-
-        (bool sentToPool, bytes memory _pData) = POOL_ADDRESS.call{
-            value: poolCut
-        }("");
-        require(sentToPool, "Failed to send to Pool");
-
-        // (bool sentToRoyalty, bytes memory _rData) = ROYALTY_ADDRESS.call{value: creatorCut}("");
-        // require(sentToRoyalty, "Failed to send to creator");
+        erc20Instance.transfer(TREAUSRY, treasuryCut);
+        erc20Instance.transfer(POOL_ADDRESS, poolCut);
+        erc20Instance.transfer(ROYALTY_ADDRESS, creatorCut);
     }
 
     function updateTreasuryAddress(
@@ -243,7 +229,7 @@ contract CasterNFT is
     ) internal pure returns (uint256) {
         // TODO: @abhishek fix the calculation
         // (currentToken ** 1.05) x 60
-        return (_currentTokenId ** 1) * 60;
+        return ((_currentTokenId * 1) * 60);
     }
 
     function updatePoolAddress(address _newPoolAddress) public onlyOwner {
