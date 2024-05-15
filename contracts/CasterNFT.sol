@@ -21,7 +21,7 @@ contract CasterNFT is
 {
     IERC20 public erc20Instance;
 
-    address public TEAM_NFT_CONTRACT = address(0);
+    address public STAKING_ADDRESS = address(0);
     address public TREAUSRY = address(0);
     address public POOL_ADDRESS = address(0);
     address public ROYALTY_ADDRESS = address(0);
@@ -80,7 +80,7 @@ contract CasterNFT is
 
         emit StakeNFTs(msg.sender, _ids, _amounts);
 
-        ITeamNFT teamNFTContract = ITeamNFT(TEAM_NFT_CONTRACT);
+        ITeamNFT teamNFTContract = ITeamNFT(STAKING_ADDRESS);
         teamNFTContract.stakeNFTs(msg.sender, _ids, _amounts);
     }
 
@@ -236,7 +236,7 @@ contract CasterNFT is
     }
 
     function updateTeamNFTAddress(address _newTeamNFTAddress) public onlyOwner {
-        TEAM_NFT_CONTRACT = _newTeamNFTAddress;
+        STAKING_ADDRESS = _newTeamNFTAddress;
     }
 
     function updateRoyaltyAddress(address _newRoyaltyAddress) public onlyOwner {
