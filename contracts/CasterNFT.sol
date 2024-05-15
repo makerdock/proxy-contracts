@@ -8,10 +8,9 @@ import {BackendGateway} from "./utils/BackendGateway.sol";
 import {InvalidAction, TokenSupplyExceeded, InsufficientBalance, InsufficientFunds, OutOfRangeRating} from "./utils/Errors.sol";
 import {ITeamNFT} from "./interfaces/ITeamNFT.sol";
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import "hardhat/console.sol";
+import {ERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 
 contract CasterNFT is
     ERC1155,
@@ -54,7 +53,7 @@ contract CasterNFT is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC1155Holder, ERC1155) returns (bool) {
+    ) public view virtual override(ERC1155Receiver, ERC1155) returns (bool) {
         return
             interfaceId == type(IERC1155).interfaceId ||
             super.supportsInterface(interfaceId);
@@ -68,14 +67,11 @@ contract CasterNFT is
 
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
-                console.log("Insufficient funds");
                 revert InsufficientBalance(msg.sender, _ids[i], _amounts[i]);
             }
 
             totalRating += tokenRating[_ids[i]];
         }
-
-        console.log("ratings -> ", totalRating);
 
         //Todo: Check the number of NFTs per team => id*amount
         if (totalRating > TEAM_RATINGS_CAP || _ids.length > 5) {
@@ -111,13 +107,9 @@ contract CasterNFT is
             fundsToSendToUser += estimatedBondingPrice;
         }
 
-        console.log("Funds to send to User", fundsToSendToUser);
-
         distributeFunds(fundsToSendToUser);
 
         uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
-
-        console.log("Left funds", leftFunds);
 
         erc20Instance.transfer(msg.sender, leftFunds);
 
@@ -162,8 +154,6 @@ contract CasterNFT is
             }
         }
 
-        console.log("Mint price", mintPrice);
-
         erc20Instance.transferFrom(msg.sender, address(this), mintPrice);
         distributeFunds(mintPrice);
         _mint(msg.sender, id, amount, "");
@@ -201,8 +191,6 @@ contract CasterNFT is
         uint256 treasuryCut = (totalPrice * TREAUSRY_CUT) / 1000;
         uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
         uint256 creatorCut = (totalPrice * CREATOR_CUT) / 1000;
-
-        console.log("sending funds", treasuryCut, poolCut, creatorCut);
 
         erc20Instance.transfer(TREAUSRY, treasuryCut);
         erc20Instance.transfer(POOL_ADDRESS, poolCut);
