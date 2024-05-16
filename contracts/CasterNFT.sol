@@ -6,7 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {BackendGateway} from "./utils/BackendGateway.sol";
 import {InvalidAction, TokenSupplyExceeded, InsufficientBalance, InsufficientFunds, OutOfRangeRating} from "./utils/Errors.sol";
-import {ITeamNFT} from "./interfaces/ITeamNFT.sol";
+import {IStakeNFT} from "./interfaces/IStakeNFT.sol";
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -80,8 +80,8 @@ contract CasterNFT is
 
         emit StakeNFTs(msg.sender, _ids, _amounts);
 
-        ITeamNFT teamNFTContract = ITeamNFT(STAKING_ADDRESS);
-        teamNFTContract.stakeNFTs(msg.sender, _ids, _amounts);
+        IStakeNFT stakeNFTContract = IStakeNFT(STAKING_ADDRESS);
+        stakeNFTContract.stakeNFTs(msg.sender, _ids, _amounts);
     }
 
     function updateRatings(
@@ -235,8 +235,10 @@ contract CasterNFT is
         POOL_ADDRESS = _newPoolAddress;
     }
 
-    function updateTeamNFTAddress(address _newTeamNFTAddress) public onlyOwner {
-        STAKING_ADDRESS = _newTeamNFTAddress;
+    function updateStakeNFTAddress(
+        address _newStakeNFTAddress
+    ) public onlyOwner {
+        STAKING_ADDRESS = _newStakeNFTAddress;
     }
 
     function updateRoyaltyAddress(address _newRoyaltyAddress) public onlyOwner {
