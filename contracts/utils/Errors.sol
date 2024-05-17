@@ -8,3 +8,4 @@ error InsufficientFunds(address from, uint256 amount);
 error OutOfRangeRating(uint256 currentRating, uint256 maxRating);
 error UnAuthorizedAction(address from);
 error InvalidParams();
+error ForbiddenMethod();
