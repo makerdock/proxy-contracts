@@ -62,7 +62,7 @@ contract CasterNFT is
         uint256[] memory _amounts,
         bytes32[] calldata backendToken
     ) public {
-        // @abhishek: verify backendtoken
+        // @abhishek: verify backend token
 
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
@@ -91,8 +91,8 @@ contract CasterNFT is
         }
 
         safeTransferFrom(msg.sender, address(this), id, amount, "");
-
         distributeFunds(fundsToSendToUser, id, amount);
+
         uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
         erc20Instance.transfer(msg.sender, leftFunds);
     }
@@ -101,15 +101,16 @@ contract CasterNFT is
         uint256 estimatedBondingPrice = getBondingCurvePrice(
             tokenSupply[id] + amount
         );
+
         erc20Instance.transferFrom(
             msg.sender,
             address(this),
             estimatedBondingPrice
         );
-
         distributeFunds(estimatedBondingPrice, id, amount);
 
         tokenSupply[id] += amount;
+
         safeTransferFrom(address(this), msg.sender, id, amount, "");
     }
 
@@ -120,6 +121,7 @@ contract CasterNFT is
 
         uint256 mintPrice = 0;
 
+        // if user is minting first token
         if (tokenSupply[id] == 0 && amount == 1) {
             mintPrice = PRICE;
         } else {
@@ -154,7 +156,7 @@ contract CasterNFT is
         uint256 totalPrice,
         uint256 _id,
         uint256 _amount
-    ) public {
+    ) internal {
         uint256 treasuryCut = (totalPrice * TREASURY_CUT) / 1000;
         uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
         uint256 creatorCut = (totalPrice * CREATOR_CUT) / 1000;
