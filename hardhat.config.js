@@ -85,7 +85,7 @@ module.exports = {
             sepolia: BASESCAN_API_KEY,
         },
         sourcify: {
-            enabled: false,
+            enabled: true,
         },
     },
     gasReporter: {
