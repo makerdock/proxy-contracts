@@ -16,13 +16,17 @@ const MAINNET_RPC_URL =
     process.env.MAINNET_RPC_URL ||
     process.env.ALCHEMY_MAINNET_RPC_URL ||
     "https://eth-mainnet.alchemyapi.io/v2/your-api-key"
+
 const PRIVATE_KEY = process.env.PRIVATE_KEY
 // optional
 const FORKING_BLOCK_NUMBER = parseInt(process.env.FORKING_BLOCK_NUMBER) || 0
 
 // Your API key for Etherscan, obtain one at https://etherscan.io/
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "Your etherscan API key"
+const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "Your etherscan API key"
 const REPORT_GAS = process.env.REPORT_GAS || false
+
+const BASE_SEPOLIA_ETH = "https://sepolia.base.org"
+const BASE = "https://base.llamarpc.com"
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -56,6 +60,16 @@ module.exports = {
             //   },
             chainId: 1,
         },
+        sepolia: {
+            url: BASE_SEPOLIA_ETH,
+            accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+            chainId: 84532,
+        },
+        base: {
+            url: BASE,
+            accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+            chainId: 8453,
+        },
         degen: {
             url: "https://rpc.degen.tips",
             accounts: ["0x234784c482f83dba9e5f60cb597a4c324b591f1a6e48c8553bc046dbddac451f"],
@@ -67,7 +81,11 @@ module.exports = {
         // yarn hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
         apiKey: {
             // npx hardhat verify --list-networks
-            mainnet: ETHERSCAN_API_KEY,
+            base: BASESCAN_API_KEY,
+            sepolia: BASESCAN_API_KEY,
+        },
+        sourcify: {
+            enabled: false,
         },
     },
     gasReporter: {
