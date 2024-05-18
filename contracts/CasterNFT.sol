@@ -59,8 +59,11 @@ contract CasterNFT is
 
     function stakeNFTs(
         uint256[] memory _ids,
-        uint256[] memory _amounts
+        uint256[] memory _amounts,
+        bytes32[] calldata backendToken
     ) public {
+        // @abhishek: verify backendtoken
+
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
                 revert InsufficientBalance(msg.sender, _ids[i], _amounts[i]);
