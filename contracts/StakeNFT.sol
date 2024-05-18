@@ -5,7 +5,7 @@ import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 
 contract StakeNFT is ERC1155Holder {
-    address public CASTER_NFT_CONTRACT = address(0);
+    address public CASTER_NFT_CONTRACT_ADDRESS = address(0);
 
     struct StakedNFT {
         uint256[] ids;
@@ -16,15 +16,16 @@ contract StakeNFT is ERC1155Holder {
     uint256 public tokenId = 0;
 
     function updateCasterNFTAddress(address _newCasterNFT) public {
-        CASTER_NFT_CONTRACT = _newCasterNFT;
+        CASTER_NFT_CONTRACT_ADDRESS = _newCasterNFT;
     }
 
     function stakeNFTs(
         address _user,
         uint256[] memory _ids,
-        uint256[] memory _amounts
+        uint256[] memory _amounts,
+        bytes32[] calldata token // @abhishek: implement a backend token
     ) public {
-        IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT);
+        IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT_ADDRESS);
 
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= casterNFTContract.balanceOf(_user, _ids[i])) {
@@ -41,9 +42,12 @@ contract StakeNFT is ERC1155Holder {
         );
 
         StakedNFT memory userStakedNFTs = StakedNFT({
-            ids: _ids,
-            amounts: _amounts
+            ids: _ids, // 1502
+            amounts: _amounts // 2
         });
+
+        // 1: { ids: [1502], amounts: [2] }
+        // 2: { ids: [1502], amounts: [2] }
 
         tokenId++;
 
@@ -57,7 +61,9 @@ contract StakeNFT is ERC1155Holder {
     }
 
     function unstake(uint256 _tokenId) public {
-        IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT);
+        // check if user belongs to tokenId
+
+        IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT_ADDRESS);
 
         StakedNFT memory stakedNFTs = tokenIdToStakedNFTsMapping[_tokenId];
 

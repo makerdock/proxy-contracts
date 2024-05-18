@@ -56,6 +56,11 @@ module.exports = {
             //   },
             chainId: 1,
         },
+        degen: {
+            url: "https://rpc.degen.tips",
+            accounts: ["0x234784c482f83dba9e5f60cb597a4c324b591f1a6e48c8553bc046dbddac451f"],
+            chainId: 666666666,
+        },
     },
     defaultNetwork: "hardhat",
     etherscan: {
