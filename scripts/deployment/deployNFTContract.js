@@ -1,12 +1,18 @@
 const { ethers, network } = require("hardhat")
 
-async function deployCasterNFTContract() {
-    const nftContractFactory = await ethers.getContractFactory("CasterNFT")
-    const nftContract = await nftContractFactory.deploy()
+async function deployCasterNFTContract(stakingAddress, prizePoolAddress, royaltyAddress) {
+    const casterRankFactory = await ethers.getContractFactory("CasterNFT")
+    const contract = await casterRankFactory.deploy()
 
-    await nftContract.deployed()
+    await contract.deployed()
 
-    console.log("CasterNFT address -> ", nftContract.address)
+    const attachedContract = casterRankFactory.attach(contract.address)
+
+    await attachedContract.updateStakingContract(stakingAddress)
+    await attachedContract.updatePrizePoolContract(prizePoolAddress)
+    await attachedContract.updateRoyaltyContract(royaltyAddress)
+
+    return contract.address
 }
 
 module.exports = {

@@ -6,11 +6,32 @@
 // global scope, and execute the script.
 const { run } = require("hardhat")
 const { deployCasterNFTContract } = require("./deployNFTContract")
+const { deployStakingContract } = require("./deployStakingContract")
+const { deployPrizePoolContract } = require("./deployPrizePoolContract")
+const { deployRoyaltyContract } = require("./deployRoyaltyContract")
 
 async function main() {
     await run("compile")
 
-    await deployCasterNFTContract()
+    const stakingContract = await deployStakingContract()
+    const prizePoolContract = await deployPrizePoolContract()
+    const royaltyContract = await deployRoyaltyContract()
+    const casterrankContract = await deployCasterNFTContract(
+        stakingContract.address,
+        prizePoolContract.address,
+        royaltyContract.address
+    )
+
+    console.log("********************* Contracts Deployed *********************")
+    console.log("CasterRank NFT Contract: ", casterrankContract.address)
+    console.log("Staking Contract: ", stakingContract.address)
+    console.log("Prize Pool Contract: ", prizePoolContract.address)
+    console.log("Royalty Contract: ", royaltyContract.address)
+    console.log("**************************************************************")
+
+    const attachedStakingContract = await stakingContract.attach(stakingContract.address)
+
+    await attachedStakingContract.updateCasterRankContract(casterrankContract.address)
 }
 
 // We recommend this pattern to be able to use async/await everywhere

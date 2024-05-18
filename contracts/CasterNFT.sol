@@ -5,11 +5,13 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {BackendGateway} from "./utils/BackendGateway.sol";
-import {InvalidAction, ForbiddenMethod, TokenSupplyExceeded, InsufficientBalance, InsufficientFunds, OutOfRangeRating} from "./utils/Errors.sol";
+import {InvalidAction, ForbiddenMethod, TokenSupplyExceeded, InsufficientBalance} from "./utils/Errors.sol";
 import {IStakeNFT} from "./interfaces/IStakeNFT.sol";
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import {ERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {IRoyaltyContract} from "./interfaces/IRoyaltyContract.sol";
 
 contract CasterNFT is
     ERC1155,
@@ -20,23 +22,20 @@ contract CasterNFT is
 {
     IERC20 public erc20Instance;
 
-    address public STAKING_NFT_CONTRACT = address(0);
-    address public TREAUSRY = address(0);
-    address public POOL_ADDRESS = address(0);
-    address public ROYALTY_ADDRESS = address(0);
-    // address public constant LIQUIDITY_ADDRESS = address(0);
+    address public STAKING_CONTRACT_ADDRESS = address(0);
+    address public TREASURY_ADDRESS = address(0);
+    address public PRIZE_POOL_ADDRESS = address(0);
+    address public ROYALTY_CONTRACT_ADDRESS = address(0);
 
-    uint256 public constant TREAUSRY_CUT = 20; // 20 / 100 = 2%
+    uint256 public constant TREASURY_CUT = 20; // 20 / 100 = 2%
     uint256 public constant CREATOR_CUT = 60; // 60 / 100 = 6%
     uint256 public constant POOL_CUT = 20; // 20 / 100 = 2%
 
     uint256 public constant MAX_SUPPLY = 500;
     uint256 public constant PRICE = 80;
-    uint256 public constant PRICE_MULTIPLIER = 150;
-    uint256 public constant TEAM_RATINGS_CAP = 250;
+    uint256 public constant MAX_NFT_TEAM = 5; // 10
 
     mapping(uint256 => uint256) public tokenSupply;
-    mapping(uint256 => uint256) public tokenRating;
     mapping(uint256 => bool) public mintSelfNFT;
 
     event Minted(address indexed minter, uint256 indexed id, uint256 amount);
@@ -52,7 +51,7 @@ contract CasterNFT is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC1155Holder, ERC1155) returns (bool) {
+    ) public view virtual override(ERC1155Receiver, ERC1155) returns (bool) {
         return
             interfaceId == type(IERC1155).interfaceId ||
             super.supportsInterface(interfaceId);
@@ -62,34 +61,16 @@ contract CasterNFT is
         uint256[] memory _ids,
         uint256[] memory _amounts
     ) public {
-        uint256 totalRating = 0;
-
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
                 revert InsufficientBalance(msg.sender, _ids[i], _amounts[i]);
             }
-
-            totalRating += tokenRating[_ids[i]];
-        }
-
-        //Todo: Check the number of NFTs per team => id*amount
-        if (totalRating > TEAM_RATINGS_CAP || _ids.length > 5) {
-            revert OutOfRangeRating(totalRating, TEAM_RATINGS_CAP);
         }
 
         emit StakeNFTs(msg.sender, _ids, _amounts);
 
-        IStakeNFT stakingNFTContract = IStakeNFT(STAKING_NFT_CONTRACT);
+        IStakeNFT stakingNFTContract = IStakeNFT(STAKING_CONTRACT_ADDRESS);
         stakingNFTContract.stakeNFTs(msg.sender, _ids, _amounts);
-    }
-
-    function updateRatings(
-        uint256[] memory ids,
-        uint256[] memory ratings
-    ) public backendGateway {
-        for (uint256 i = 0; i < ids.length; i++) {
-            tokenRating[ids[i]] = ratings[i];
-        }
     }
 
     function forfeitNFT(uint256 id, uint256 amount) public {
@@ -106,20 +87,14 @@ contract CasterNFT is
             fundsToSendToUser += estimatedBondingPrice;
         }
 
-        distributeFunds(fundsToSendToUser);
-
-        uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
-
-        erc20Instance.transfer(msg.sender, leftFunds);
-
         safeTransferFrom(msg.sender, address(this), id, amount, "");
+
+        distributeFunds(fundsToSendToUser, id, amount);
+        uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
+        erc20Instance.transfer(msg.sender, leftFunds);
     }
 
     function mintForfeitedNFT(uint256 id, uint256 amount) public payable {
-        if (balanceOf(address(this), id) < amount) {
-            revert InsufficientBalance(address(this), id, amount);
-        }
-
         uint256 estimatedBondingPrice = getBondingCurvePrice(
             tokenSupply[id] + amount
         );
@@ -129,7 +104,7 @@ contract CasterNFT is
             estimatedBondingPrice
         );
 
-        distributeFunds(estimatedBondingPrice);
+        distributeFunds(estimatedBondingPrice, id, amount);
 
         tokenSupply[id] += amount;
         safeTransferFrom(address(this), msg.sender, id, amount, "");
@@ -154,7 +129,7 @@ contract CasterNFT is
         }
 
         erc20Instance.transferFrom(msg.sender, address(this), mintPrice);
-        distributeFunds(mintPrice);
+        distributeFunds(mintPrice, id, amount);
         _mint(msg.sender, id, amount, "");
 
         tokenSupply[id] += amount;
@@ -172,14 +147,23 @@ contract CasterNFT is
         tokenSupply[_tokenId] += 1;
     }
 
-    function distributeFunds(uint256 totalPrice) public {
-        uint256 treasuryCut = (totalPrice * TREAUSRY_CUT) / 1000;
+    function distributeFunds(
+        uint256 totalPrice,
+        uint256 _id,
+        uint256 _amount
+    ) public {
+        uint256 treasuryCut = (totalPrice * TREASURY_CUT) / 1000;
         uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
         uint256 creatorCut = (totalPrice * CREATOR_CUT) / 1000;
 
-        erc20Instance.transfer(TREAUSRY, treasuryCut);
-        erc20Instance.transfer(POOL_ADDRESS, poolCut);
-        erc20Instance.transfer(ROYALTY_ADDRESS, creatorCut);
+        erc20Instance.transfer(TREASURY_ADDRESS, treasuryCut);
+        erc20Instance.transfer(PRIZE_POOL_ADDRESS, poolCut);
+        erc20Instance.transfer(ROYALTY_CONTRACT_ADDRESS, creatorCut);
+
+        IRoyaltyContract(ROYALTY_CONTRACT_ADDRESS).updateRewardsMapping(
+            _id,
+            _amount
+        );
     }
 
     function getMintPriceForToken(
@@ -202,32 +186,34 @@ contract CasterNFT is
         return totalPrice;
     }
 
-    function updateTreasuryAddress(
-        address _newTreasuryAddress
-    ) public onlyOwner {
-        TREAUSRY = _newTreasuryAddress;
-    }
-
     function getBondingCurvePrice(
         uint256 _currentTokenId
-    ) internal pure returns (uint256) {
+    ) public pure returns (uint256) {
         // TODO: @abhishek fix the calculation
         // (currentToken ** 1.05) x 60
         return ((_currentTokenId * 1) * 60);
     }
 
-    function updatePoolAddress(address _newPoolAddress) public onlyOwner {
-        POOL_ADDRESS = _newPoolAddress;
-    }
-
-    function updateStakeNFTAddress(
-        address _newStakeNFTAddress
+    function updateTreasuryAddress(
+        address _newTreasuryAddress
     ) public onlyOwner {
-        STAKING_NFT_CONTRACT = _newStakeNFTAddress;
+        TREASURY_ADDRESS = _newTreasuryAddress;
     }
 
-    function updateRoyaltyAddress(address _newRoyaltyAddress) public onlyOwner {
-        ROYALTY_ADDRESS = _newRoyaltyAddress;
+    function updatePrizePoolAddress(address _newPoolAddress) public onlyOwner {
+        PRIZE_POOL_ADDRESS = _newPoolAddress;
+    }
+
+    function updateStakingContractAddress(
+        address _newStakingAddress
+    ) public onlyOwner {
+        STAKING_CONTRACT_ADDRESS = _newStakingAddress;
+    }
+
+    function updateRoyaltyContractAddress(
+        address _newRoyaltyContractAddress
+    ) public onlyOwner {
+        ROYALTY_CONTRACT_ADDRESS = _newRoyaltyContractAddress;
     }
 
     function _mintBatch(

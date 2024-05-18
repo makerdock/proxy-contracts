@@ -8,8 +8,8 @@ contract PrizePool is BackendGateway {
     mapping(address => uint256) public winnerMapping;
 
     function updateWinnerMapping(
-        address[] memory _winningAddresses,
-        uint256[] memory _winningAmount
+        address[] memory _winningAddresses, // [0xabhi, 0xryen, 0xkenneth]
+        uint256[] memory _winningAmount // [123, 244, 124]
     ) public backendGateway {
         if (_winningAddresses.length == _winningAmount.length) {
             revert InvalidParams();
