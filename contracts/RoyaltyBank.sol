@@ -2,8 +2,11 @@
 pragma solidity ^0.8.25;
 
 import {BackendGateway} from "./utils/BackendGateway.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 contract RoyaltyBank is BackendGateway {
+    address public TOKEN_CONTRACT_ADDRESS = address(0);
     mapping(uint256 => uint256) public royalties;
 
     // @abhishek: need to secure this function to avoid any direct external calls
@@ -15,11 +18,21 @@ contract RoyaltyBank is BackendGateway {
         }
     }
 
+    function updateTokenContractAddress(
+        address _newTokenContract
+    ) public onlyOwner {
+        require(_newTokenContract != address(0), "Invalid address");
+        TOKEN_CONTRACT_ADDRESS = _newTokenContract;
+    }
+
     function claimReward(
         uint256 id,
         address creatorAddress
     ) public backendGateway {
+        uint256 rewards = royalties[id];
+
         royalties[id] = 0;
-        payable(creatorAddress).transfer(royalties[id]);
+
+        IERC20(TOKEN_CONTRACT_ADDRESS).transfer(creatorAddress, rewards);
     }
 }
