@@ -73,6 +73,9 @@ contract StakeNFT is ERC1155Holder, Ownable {
 
         StakedNFT memory stakedNFTs = tokenIdToStakedNFTsMapping[_tokenId];
 
+        delete tokenIdToStakedNFTsMapping[_tokenId];
+        delete tokenIdToUserMapping[_tokenId];
+
         casterNFTContract.safeBatchTransferFrom(
             address(this),
             msg.sender,
@@ -80,8 +83,5 @@ contract StakeNFT is ERC1155Holder, Ownable {
             stakedNFTs.amounts,
             ""
         );
-
-        delete tokenIdToStakedNFTsMapping[_tokenId];
-        delete tokenIdToUserMapping[_tokenId];
     }
 }
