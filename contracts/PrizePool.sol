@@ -36,10 +36,12 @@ contract PrizePool is BackendGateway {
     //Todo: Change Trasfer to call
     function claimWinnings() public {
         if (winnerMapping[msg.sender] > 0) {
+            uint256 winnings = winnerMapping[msg.sender];
             IERC20(TOKEN_CONTRACT_ADDRESS).transfer(
                 msg.sender,
                 winnerMapping[msg.sender]
             );
+
             delete winnerMapping[msg.sender];
         }
     }
