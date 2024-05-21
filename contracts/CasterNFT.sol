@@ -75,6 +75,8 @@ contract CasterNFT is
         /**
          * or
          *
+         * Check if valid stakingContract
+         *
          * IStakeNFT stakingNFTContract = IStakeNFT(_stakingContractInteraction);
          * stakingNFTContract.stakeNFTs(msg.sender, _ids, _amounts, signature);
          */
