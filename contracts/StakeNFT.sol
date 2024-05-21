@@ -3,8 +3,10 @@ pragma solidity ^0.8.25;
 
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {InsufficientBalance, UnAuthorizedAction} from "./utils/Errors.sol";
 
-contract StakeNFT is ERC1155Holder {
+contract StakeNFT is ERC1155Holder, Ownable {
     address public CASTER_NFT_CONTRACT_ADDRESS = address(0);
 
     struct StakedNFT {
@@ -13,9 +15,10 @@ contract StakeNFT is ERC1155Holder {
     }
 
     mapping(uint256 => StakedNFT) private tokenIdToStakedNFTsMapping;
+    mapping(uint256 => address) private tokenIdToUserMapping;
     uint256 public tokenId = 0;
 
-    function updateCasterNFTAddress(address _newCasterNFT) public {
+    function updateCasterNFTAddress(address _newCasterNFT) public onlyOwner {
         CASTER_NFT_CONTRACT_ADDRESS = _newCasterNFT;
     }
 
@@ -23,15 +26,17 @@ contract StakeNFT is ERC1155Holder {
         address _user,
         uint256[] memory _ids,
         uint256[] memory _amounts,
-        bytes32[] calldata token // @abhishek: implement a backend token
+        // @abhishek: implement a backend signature validation
+        bytes32[] calldata signature
     ) public {
-        // @abhishek: verify backendtoken
+        // TBD: validate token
+        // maybe decode the _user, _ids and _amounts from signature
 
         IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT_ADDRESS);
 
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= casterNFTContract.balanceOf(_user, _ids[i])) {
-                revert("incorrect balances");
+                revert InsufficientBalance(_user, _ids[i], _amounts[i]);
             }
         }
 
@@ -44,16 +49,13 @@ contract StakeNFT is ERC1155Holder {
         );
 
         StakedNFT memory userStakedNFTs = StakedNFT({
-            ids: _ids, // 1502
-            amounts: _amounts // 2
+            ids: _ids,
+            amounts: _amounts
         });
 
-        // 1: { ids: [1502], amounts: [2] }
-        // 2: { ids: [1502], amounts: [2] }
-
         tokenId++;
-
         tokenIdToStakedNFTsMapping[tokenId] = userStakedNFTs;
+        tokenIdToUserMapping[tokenId] = _user;
     }
 
     function getStakedNFTDetails(
@@ -63,7 +65,9 @@ contract StakeNFT is ERC1155Holder {
     }
 
     function unstake(uint256 _tokenId) public {
-        // check if user belongs to tokenId
+        if (tokenIdToUserMapping[_tokenId] != msg.sender) {
+            revert UnAuthorizedAction(msg.sender);
+        }
 
         IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT_ADDRESS);
 
@@ -78,5 +82,6 @@ contract StakeNFT is ERC1155Holder {
         );
 
         delete tokenIdToStakedNFTsMapping[_tokenId];
+        delete tokenIdToUserMapping[_tokenId];
     }
 }

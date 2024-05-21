@@ -58,25 +58,35 @@ contract CasterNFT is
     }
 
     function stakeNFTs(
+        // address _stakingContractInteraction, maybe pass the staking contract address here?
         uint256[] memory _ids,
         uint256[] memory _amounts,
-        bytes32[] calldata backendToken
+        bytes32[] calldata signature
     ) public {
-        // @abhishek: verify backend token
-
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
                 revert InsufficientBalance(msg.sender, _ids[i], _amounts[i]);
             }
         }
 
-        emit StakeNFTs(msg.sender, _ids, _amounts);
-
         IStakeNFT stakingNFTContract = IStakeNFT(STAKING_CONTRACT_ADDRESS);
         stakingNFTContract.stakeNFTs(msg.sender, _ids, _amounts);
+
+        /**
+         * or
+         *
+         * IStakeNFT stakingNFTContract = IStakeNFT(_stakingContractInteraction);
+         * stakingNFTContract.stakeNFTs(msg.sender, _ids, _amounts, signature);
+         */
+
+        emit StakeNFTs(msg.sender, _ids, _amounts);
     }
 
     function forfeitNFT(uint256 id, uint256 amount) public {
+        if (amount == 0) {
+            revert InvalidAction(msg.sender, id);
+        }
+
         if (amount > balanceOf(msg.sender, id)) {
             revert InsufficientBalance(msg.sender, id, amount);
         }
@@ -98,6 +108,14 @@ contract CasterNFT is
     }
 
     function mintForfeitedNFT(uint256 id, uint256 amount) public payable {
+        if (amount == 0) {
+            revert InvalidAction(msg.sender, id);
+        }
+
+        if (amount > balanceOf(address(this), id)) {
+            revert InsufficientBalance(address(this), id, amount);
+        }
+
         uint256 estimatedBondingPrice = getBondingCurvePrice(
             tokenSupply[id] + amount
         );
@@ -115,6 +133,10 @@ contract CasterNFT is
     }
 
     function mint(uint256 id, uint256 amount) public payable {
+        if (amount == 0) {
+            revert InvalidAction(msg.sender, id);
+        }
+
         if (currentSupply(id) == MAX_SUPPLY) {
             revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
         }
