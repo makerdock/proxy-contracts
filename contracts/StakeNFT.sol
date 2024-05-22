@@ -3,10 +3,10 @@ pragma solidity ^0.8.25;
 
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {BackendGateway} from "./utils/BackendGateway.sol";
 import {InsufficientBalance, UnAuthorizedAction} from "./utils/Errors.sol";
 
-contract StakeNFT is ERC1155Holder, Ownable {
+contract StakeNFT is ERC1155Holder, BackendGateway {
     address public CASTER_NFT_CONTRACT_ADDRESS = address(0);
 
     struct StakedNFT {
@@ -27,14 +27,14 @@ contract StakeNFT is ERC1155Holder, Ownable {
         uint256[] memory _ids,
         uint256[] memory _amounts,
         // @abhishek: implement a backend signature validation
-        bytes32[] calldata signature
+        bytes32[] calldata signature,
+        uint256 nonce
     ) public {
         // TBD: validate token
-        // maybe decode the _user, _ids and _amounts from signature
 
         IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT_ADDRESS);
 
-        for (uint256 i = 0; i < _ids.length; i++) {
+        for (uint8 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= casterNFTContract.balanceOf(_user, _ids[i])) {
                 revert InsufficientBalance(_user, _ids[i], _amounts[i]);
             }
