@@ -45,7 +45,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256[] memory _amounts, // safeTransferFrom needs uint256
         bytes memory _signature,
         uint32 _nonce
-    ) public {
+    ) public whenNotPaused {
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
                 revert InsufficientBalance(msg.sender, _ids[i], _amounts[i]);
@@ -62,7 +62,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         );
     }
 
-    function forfeitNFT(uint256 id, uint8 amount) public {
+    function forfeitNFT(uint256 id, uint8 amount) public whenNotPaused {
         if (amount == 0) {
             revert InvalidAction(msg.sender, id);
         }
@@ -90,7 +90,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         erc20Instance.transfer(msg.sender, leftFunds);
     }
 
-    function mint(uint256 id, uint16 amount) public payable {
+    function mint(uint256 id, uint16 amount) public payable whenNotPaused {
         if (amount == 0) {
             revert InvalidAction(msg.sender, id);
         }
@@ -123,7 +123,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     function mintSelfCreatorNFT(
         address _userAddress,
         uint256 _tokenId
-    ) public backendGateway {
+    ) public backendGateway whenNotPaused {
         if (mintSelfNFT[_tokenId] == true) {
             revert InvalidAction(_userAddress, _tokenId);
         }
@@ -182,24 +182,37 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     function updateWhitelistedStakingContracts(
         address _stakingContractAddress,
         bool _isWhitelisted
-    ) public onlyOwner {
+    ) public onlyOwner whenNotPaused {
         whitelistedStakingContracts[_stakingContractAddress] = _isWhitelisted;
     }
 
     function updateTreasuryAddress(
         address _newTreasuryAddress
-    ) public onlyOwner {
+    ) public onlyOwner whenNotPaused {
         TREASURY_ADDRESS = _newTreasuryAddress;
     }
 
-    function updatePrizePoolAddress(address _newPoolAddress) public onlyOwner {
+    function updatePrizePoolAddress(
+        address _newPoolAddress
+    ) public onlyOwner whenNotPaused {
         PRIZE_POOL_ADDRESS = _newPoolAddress;
     }
 
     function updateRoyaltyContractAddress(
         address _newRoyaltyContractAddress
-    ) public onlyOwner {
+    ) public onlyOwner whenNotPaused {
         ROYALTY_CONTRACT_ADDRESS = _newRoyaltyContractAddress;
+    }
+
+    function _pause() public virtual override {
+        if (msg.sender != owner()) {
+            revert UnAuthorisedAction(msg.sender);
+        }
+    }
+    function _unpause() public virtual override {
+        if (msg.sender != owner()) {
+            revert UnAuthorisedAction(msg.sender);
+        }
     }
 
     function _burn(address from, uint256 id) internal virtual {
