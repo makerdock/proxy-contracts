@@ -26,11 +26,10 @@ contract StakeNFT is ERC1155Holder, BackendGateway {
         address _user,
         uint256[] memory _ids,
         uint256[] memory _amounts,
-        // @abhishek: implement a backend signature validation
-        bytes32[] calldata signature,
-        uint256 nonce
+        bytes memory _signature,
+        uint32 _nonce
     ) public {
-        // TBD: validate token
+        verifySignature(_user, _nonce, _signature);
 
         IERC1155 casterNFTContract = IERC1155(CASTER_NFT_CONTRACT_ADDRESS);
 

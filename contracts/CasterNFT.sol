@@ -3,26 +3,16 @@ pragma solidity ^0.8.25;
 
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {BackendGateway} from "./utils/BackendGateway.sol";
 import {InvalidAction, ForbiddenMethod, TokenSupplyExceeded, InsufficientBalance} from "./utils/Errors.sol";
 import {IStakeNFT} from "./interfaces/IStakeNFT.sol";
-import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import {ERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
-import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IRoyaltyContract} from "./interfaces/IRoyaltyContract.sol";
 
-contract CasterNFT is
-    ERC1155,
-    Ownable,
-    Pausable,
-    BackendGateway,
-    ERC1155Holder
-{
+contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     IERC20 public erc20Instance;
 
-    address public STAKING_CONTRACT_ADDRESS = address(0);
     address public TREASURY_ADDRESS = address(0);
     address public PRIZE_POOL_ADDRESS = address(0);
     address public ROYALTY_CONTRACT_ADDRESS = address(0);
@@ -49,20 +39,12 @@ contract CasterNFT is
         return tokenSupply[id];
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(ERC1155Receiver, ERC1155) returns (bool) {
-        return
-            interfaceId == type(IERC1155).interfaceId ||
-            super.supportsInterface(interfaceId);
-    }
-
     function stakeNFTs(
         address _stakingContractAddress,
         uint256[] memory _ids,
         uint256[] memory _amounts, // safeTransferFrom needs uint256
-        bytes32[] calldata signature,
-        uint256 _nonce
+        bytes memory _signature,
+        uint32 _nonce
     ) public {
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
@@ -75,8 +57,8 @@ contract CasterNFT is
             msg.sender,
             _ids,
             _amounts,
-            signature,
-            nonce
+            _signature,
+            _nonce
         );
     }
 
@@ -88,6 +70,9 @@ contract CasterNFT is
         if (amount > balanceOf(msg.sender, id)) {
             revert InsufficientBalance(msg.sender, id, amount);
         }
+
+        super._burn(msg.sender, id, amount);
+        tokenSupply[id] -= amount;
 
         uint256 fundsToSendToUser = 0;
 
@@ -103,29 +88,6 @@ contract CasterNFT is
 
         uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
         erc20Instance.transfer(msg.sender, leftFunds);
-    }
-
-    function mintForfeitedNFT(uint256 id, uint16 amount) public payable {
-        if (amount == 0) {
-            revert InvalidAction(msg.sender, id);
-        }
-
-        if (amount > balanceOf(address(this), id)) {
-            revert InsufficientBalance(address(this), id, amount);
-        }
-
-        uint256 estimatedBondingPrice = getBondingCurvePrice(
-            tokenSupply[id] + amount
-        );
-
-        erc20Instance.transferFrom(
-            msg.sender,
-            address(this),
-            estimatedBondingPrice
-        );
-
-        distributeFunds(estimatedBondingPrice, id, amount);
-        safeTransferFrom(address(this), msg.sender, id, amount, "");
     }
 
     function mint(uint256 id, uint16 amount) public payable {
@@ -238,15 +200,6 @@ contract CasterNFT is
         address _newRoyaltyContractAddress
     ) public onlyOwner {
         ROYALTY_CONTRACT_ADDRESS = _newRoyaltyContractAddress;
-    }
-
-    function _mintBatch(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) internal virtual override {
-        revert ForbiddenMethod();
     }
 
     function _burn(address from, uint256 id) internal virtual {

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.25;
 
 import {BackendGateway} from "./utils/BackendGateway.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {InvalidAddress} from "./utils/Errors.sol";
 
 contract RoyaltyBank is BackendGateway {
     address public TOKEN_CONTRACT_ADDRESS = address(0);
@@ -21,7 +21,9 @@ contract RoyaltyBank is BackendGateway {
     function updateTokenContractAddress(
         address _newTokenContract
     ) public onlyOwner {
-        require(_newTokenContract != address(0), "Invalid address");
+        if (_newTokenContract == address(0)) {
+            revert InvalidAddress(_newTokenContract);
+        }
         TOKEN_CONTRACT_ADDRESS = _newTokenContract;
     }
 

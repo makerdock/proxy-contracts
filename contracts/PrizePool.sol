@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import {BackendGateway} from "./utils/BackendGateway.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {InvalidParams} from "./utils/Errors.sol";
+import {InvalidParams, InsufficientFunds} from "./utils/Errors.sol";
 
 contract PrizePool is BackendGateway {
     mapping(address => uint256) public winnerMapping;
@@ -33,16 +33,21 @@ contract PrizePool is BackendGateway {
             }
         }
     }
-    //Todo: Change Trasfer to call
-    function claimWinnings() public {
-        if (winnerMapping[msg.sender] > 0) {
-            uint256 winnings = winnerMapping[msg.sender];
-            IERC20(TOKEN_CONTRACT_ADDRESS).transfer(
-                msg.sender,
-                winnerMapping[msg.sender]
-            );
 
-            delete winnerMapping[msg.sender];
+    function claimWinnings() public {
+        IERC20 token = IERC20(TOKEN_CONTRACT_ADDRESS);
+
+        if (winnerMapping[msg.sender] > 0) {
+            if (token.balanceOf(address(this)) >= winnerMapping[msg.sender]) {
+                uint256 winnings = winnerMapping[msg.sender];
+                winnerMapping[msg.sender] = 0;
+                token.transfer(msg.sender, winnings);
+            } else {
+                revert InsufficientFunds(
+                    address(this),
+                    winnerMapping[msg.sender]
+                );
+            }
         }
     }
 }
