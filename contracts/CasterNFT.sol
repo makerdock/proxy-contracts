@@ -27,19 +27,19 @@ contract CasterNFT is
     address public PRIZE_POOL_ADDRESS = address(0);
     address public ROYALTY_CONTRACT_ADDRESS = address(0);
 
-    uint256 public constant TREASURY_CUT = 20; // 20 / 100 = 2%
-    uint256 public constant CREATOR_CUT = 60; // 60 / 100 = 6%
-    uint256 public constant POOL_CUT = 20; // 20 / 100 = 2%
+    mapping(address => bool) private whitelistedStakingContracts;
 
-    uint256 public constant MAX_SUPPLY = 500;
-    uint256 public constant PRICE = 80;
-    uint256 public constant MAX_NFT_TEAM = 5; // 10
+    uint8 public constant TREASURY_CUT = 20; // 20 / 100 = 2%
+    uint8 public constant CREATOR_CUT = 60; // 60 / 100 = 6%
+    uint8 public constant POOL_CUT = 20; // 20 / 100 = 2%
 
-    mapping(uint256 => uint256) public tokenSupply;
+    uint16 public constant MAX_SUPPLY = 500;
+    uint8 public constant PRICE = 80;
+
+    mapping(uint256 => uint16) public tokenSupply;
     mapping(uint256 => bool) public mintSelfNFT;
 
-    event Minted(address indexed minter, uint256 indexed id, uint256 amount);
-    event StakeNFTs(address indexed staker, uint256[] ids, uint256[] amounts);
+    event Minted(address indexed minter, uint256 indexed id, uint8 amount);
 
     constructor(address _erc20Address) ERC1155("https://ipfs.io/ipfs/QmZ9") {
         erc20Instance = IERC20(_erc20Address);
@@ -58,10 +58,11 @@ contract CasterNFT is
     }
 
     function stakeNFTs(
-        // address _stakingContractInteraction, maybe pass the staking contract address here?
+        address _stakingContractAddress,
         uint256[] memory _ids,
-        uint256[] memory _amounts,
-        bytes32[] calldata signature
+        uint256[] memory _amounts, // safeTransferFrom needs uint256
+        bytes32[] calldata signature,
+        uint256 _nonce
     ) public {
         for (uint256 i = 0; i < _ids.length; i++) {
             if (_amounts[i] >= balanceOf(msg.sender, _ids[i])) {
@@ -69,22 +70,17 @@ contract CasterNFT is
             }
         }
 
-        IStakeNFT stakingNFTContract = IStakeNFT(STAKING_CONTRACT_ADDRESS);
-        stakingNFTContract.stakeNFTs(msg.sender, _ids, _amounts);
-
-        /**
-         * or
-         *
-         * Check if valid stakingContract
-         *
-         * IStakeNFT stakingNFTContract = IStakeNFT(_stakingContractInteraction);
-         * stakingNFTContract.stakeNFTs(msg.sender, _ids, _amounts, signature);
-         */
-
-        emit StakeNFTs(msg.sender, _ids, _amounts);
+        IStakeNFT stakingNFTContract = IStakeNFT(_stakingContractAddress);
+        stakingNFTContract.stakeNFTs(
+            msg.sender,
+            _ids,
+            _amounts,
+            signature,
+            nonce
+        );
     }
 
-    function forfeitNFT(uint256 id, uint256 amount) public {
+    function forfeitNFT(uint256 id, uint8 amount) public {
         if (amount == 0) {
             revert InvalidAction(msg.sender, id);
         }
@@ -109,7 +105,7 @@ contract CasterNFT is
         erc20Instance.transfer(msg.sender, leftFunds);
     }
 
-    function mintForfeitedNFT(uint256 id, uint256 amount) public payable {
+    function mintForfeitedNFT(uint256 id, uint16 amount) public payable {
         if (amount == 0) {
             revert InvalidAction(msg.sender, id);
         }
@@ -127,14 +123,12 @@ contract CasterNFT is
             address(this),
             estimatedBondingPrice
         );
+
         distributeFunds(estimatedBondingPrice, id, amount);
-
-        tokenSupply[id] += amount;
-
         safeTransferFrom(address(this), msg.sender, id, amount, "");
     }
 
-    function mint(uint256 id, uint256 amount) public payable {
+    function mint(uint256 id, uint16 amount) public payable {
         if (amount == 0) {
             revert InvalidAction(msg.sender, id);
         }
@@ -179,7 +173,7 @@ contract CasterNFT is
     function distributeFunds(
         uint256 totalPrice,
         uint256 _id,
-        uint256 _amount
+        uint16 _amount
     ) internal {
         uint256 treasuryCut = (totalPrice * TREASURY_CUT) / 1000;
         uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
@@ -223,6 +217,13 @@ contract CasterNFT is
         return ((_currentTokenId * 1) * 60);
     }
 
+    function updateWhitelistedStakingContracts(
+        address _stakingContractAddress,
+        bool _isWhitelisted
+    ) public onlyOwner {
+        whitelistedStakingContracts[_stakingContractAddress] = _isWhitelisted;
+    }
+
     function updateTreasuryAddress(
         address _newTreasuryAddress
     ) public onlyOwner {
@@ -231,12 +232,6 @@ contract CasterNFT is
 
     function updatePrizePoolAddress(address _newPoolAddress) public onlyOwner {
         PRIZE_POOL_ADDRESS = _newPoolAddress;
-    }
-
-    function updateStakingContractAddress(
-        address _newStakingAddress
-    ) public onlyOwner {
-        STAKING_CONTRACT_ADDRESS = _newStakingAddress;
     }
 
     function updateRoyaltyContractAddress(
