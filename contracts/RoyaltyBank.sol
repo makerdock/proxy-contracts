@@ -25,8 +25,8 @@ contract RoyaltyBank is BackendGateway {
     function updateCasterNFTAddress(
         address _nftMintingContract
     ) public onlyOwner {
-        if (_newTokenContract == address(0)) {
-            revert InvalidAddress(_newTokenContract);
+        if (_nftMintingContract == address(0)) {
+            revert InvalidAddress(_nftMintingContract);
         }
         CASTER_NFT_ADDRESS = _nftMintingContract;
     }
