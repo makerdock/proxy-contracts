@@ -13,3 +13,4 @@ error InvalidSignature();
 error InvalidServerWallet();
 error InvalidNonce(uint32 nonce);
 error InvalidAddress(address _address);
+error InvalidStakingAddress(address _address);

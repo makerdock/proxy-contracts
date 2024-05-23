@@ -5,7 +5,7 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {BackendGateway} from "./utils/BackendGateway.sol";
-import {InvalidAction, ForbiddenMethod, UnAuthorizedAction, TokenSupplyExceeded, InsufficientBalance} from "./utils/Errors.sol";
+import {InvalidAction, UnAuthorizedAction, TokenSupplyExceeded, InsufficientBalance, InvalidStakingAddress} from "./utils/Errors.sol";
 import {IStakeNFT} from "./interfaces/IStakeNFT.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IRoyaltyContract} from "./interfaces/IRoyaltyContract.sol";
@@ -17,7 +17,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     address public PRIZE_POOL_ADDRESS = address(0);
     address public ROYALTY_CONTRACT_ADDRESS = address(0);
 
-    mapping(address => bool) private whitelistedStakingContracts;
+    mapping(address => uint8) private whitelistedStakingContracts;
 
     uint8 public constant TREASURY_CUT = 20; // 20 / 100 = 2%
     uint8 public constant CREATOR_CUT = 60; // 60 / 100 = 6%
@@ -52,6 +52,10 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             }
         }
 
+        if (whitelistedStakingContracts[_stakingContractAddress] != 1) {
+            revert InvalidStakingAddress(msg.sender);
+        }
+
         IStakeNFT stakingNFTContract = IStakeNFT(_stakingContractAddress);
         stakingNFTContract.stakeNFTs(
             msg.sender,
@@ -72,6 +76,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         }
 
         super._burn(msg.sender, id, amount);
+
         tokenSupply[id] -= amount;
 
         uint256 fundsToSendToUser = 0;
@@ -83,7 +88,6 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             fundsToSendToUser += estimatedBondingPrice;
         }
 
-        safeTransferFrom(msg.sender, address(this), id, amount, "");
         distributeFunds(fundsToSendToUser, id, amount);
 
         uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
@@ -181,7 +185,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
     function updateWhitelistedStakingContracts(
         address _stakingContractAddress,
-        bool _isWhitelisted
+        uint8 _isWhitelisted // 1 -> whitelisted, 0 -> not whitelisted
     ) public onlyOwner whenNotPaused {
         whitelistedStakingContracts[_stakingContractAddress] = _isWhitelisted;
     }
@@ -204,22 +208,10 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         ROYALTY_CONTRACT_ADDRESS = _newRoyaltyContractAddress;
     }
 
-    function _pause() internal virtual override {
-        if (msg.sender != owner()) {
-            revert UnAuthorizedAction(msg.sender);
-        }
+    function pause() public onlyOwner whenNotPaused {
+        _pause();
     }
-    function _unpause() internal virtual override {
-        if (msg.sender != owner()) {
-            revert UnAuthorizedAction(msg.sender);
-        }
-    }
-
-    function _burn(address from, uint256 id) internal virtual {
-        revert ForbiddenMethod();
-    }
-
-    function _burnBatch(address from, uint256 id) internal virtual {
-        revert ForbiddenMethod();
+    function unpause() public onlyOwner whenPaused {
+        _unpause();
     }
 }
