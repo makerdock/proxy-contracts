@@ -26,7 +26,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     uint16 public constant MAX_SUPPLY = 500;
     uint8 public constant PRICE = 80;
 
-    mapping(uint256 => uint16) public tokenSupply;
+    mapping(uint256 => uint16) public currentTokenSupply;
     mapping(uint256 => bool) public mintSelfNFT;
 
     event Minted(address indexed minter, uint256 indexed id, uint8 amount);
@@ -36,7 +36,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     }
 
     function currentSupply(uint256 id) public view returns (uint256) {
-        return tokenSupply[id];
+        return currentTokenSupply[id];
     }
 
     function stakeNFTs(
@@ -75,22 +75,23 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             revert InsufficientBalance(msg.sender, id, amount);
         }
 
-        super._burn(msg.sender, id, amount);
-
-        tokenSupply[id] -= amount;
+        currentTokenSupply[id] -= amount;
 
         uint256 fundsToSendToUser = 0;
 
         for (uint256 i = 0; i < amount; i++) {
             uint256 estimatedBondingPrice = getBondingCurvePrice(
-                tokenSupply[id] - i + 1
+                currentTokenSupply[id] - i + 1
             );
             fundsToSendToUser += estimatedBondingPrice;
         }
 
-        distributeFunds(fundsToSendToUser, id, amount);
+        uint256 leftFunds = fundsToSendToUser -
+            (fundsToSendToUser * (TREASURY_CUT + POOL_CUT + CREATOR_CUT)) /
+            100;
 
-        uint256 leftFunds = fundsToSendToUser - (fundsToSendToUser * 9) / 100;
+        super._burn(msg.sender, id, amount);
+        distributeFunds(fundsToSendToUser, id, amount);
         erc20Instance.transfer(msg.sender, leftFunds);
     }
 
@@ -106,12 +107,12 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 mintPrice = 0;
 
         // if user is minting first token
-        if (tokenSupply[id] == 0 && amount == 1) {
+        if (currentTokenSupply[id] == 0 && amount == 1) {
             mintPrice = PRICE;
         } else {
             for (uint256 i = 0; i < amount; i++) {
                 uint256 estimatedBondingPrice = getBondingCurvePrice(
-                    tokenSupply[id] + (i + 1)
+                    currentTokenSupply[id] + (i + 1)
                 );
                 mintPrice += estimatedBondingPrice;
             }
@@ -121,7 +122,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         distributeFunds(mintPrice, id, amount);
         _mint(msg.sender, id, amount, "");
 
-        tokenSupply[id] += amount;
+        currentTokenSupply[id] += amount;
     }
 
     function mintSelfCreatorNFT(
@@ -133,7 +134,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         }
 
         _mint(_userAddress, _tokenId, 1, "");
-        tokenSupply[_tokenId] += 1;
+        currentTokenSupply[_tokenId] += 1;
     }
 
     function distributeFunds(
@@ -160,16 +161,14 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 _amount
     ) public view returns (uint256) {
         uint256 totalPrice = 0;
-        uint256 currentTokenSupply = tokenSupply[_tokenId];
+        uint256 tokenSupply = currentTokenSupply[_tokenId];
 
         for (uint256 i = 0; i < _amount; i++) {
-            if (currentTokenSupply + i >= MAX_SUPPLY) {
+            if (tokenSupply + i >= MAX_SUPPLY) {
                 revert TokenSupplyExceeded(_tokenId, MAX_SUPPLY, msg.sender);
             }
 
-            uint256 bondingPrice = getBondingCurvePrice(
-                currentTokenSupply + (i + 1)
-            );
+            uint256 bondingPrice = getBondingCurvePrice(tokenSupply + (i + 1));
 
             totalPrice += bondingPrice;
         }
@@ -180,7 +179,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     function getBondingCurvePrice(
         uint256 _currentTokenId
     ) internal pure returns (uint256) {
-        if (_currentTokenId == 1) {
+        if (_currentTokenId == 1 || _currentTokenId == 0) {
             return PRICE;
         }
 
