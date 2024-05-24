@@ -14,14 +14,20 @@ async function deployCasterNFTContract(stakingAddress, prizePoolAddress, royalty
 
     const attachedContract = casterRankFactory.attach(contract.address)
 
-    await run("verify:verify", {
-        address: contract.address,
-        constructorArguments: [DEGEN_ADDRESS],
+    // await run("verify:verify", {
+    //     address: contract.address,
+    //     constructorArguments: [DEGEN_ADDRESS],
+    // })
+
+    console.log({
+        stakingAddress,
+        prizePoolAddress,
+        royaltyAddress,
     })
 
-    await attachedContract.updateStakingContract(stakingAddress)
-    await attachedContract.updatePrizePoolContract(prizePoolAddress)
-    await attachedContract.updateRoyaltyContract(royaltyAddress)
+    await attachedContract.updateWhitelistedStakingContracts(stakingAddress, 1)
+    await attachedContract.updatePrizePoolAddress(prizePoolAddress)
+    await attachedContract.updateRoyaltyContractAddress(royaltyAddress)
 
     return contract.address
 }

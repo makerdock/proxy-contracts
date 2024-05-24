@@ -16,25 +16,30 @@ async function main() {
     const stakingContract = await deployStakingContract()
     const prizePoolContract = await deployPrizePoolContract()
     const royaltyContract = await deployRoyaltyContract()
+
+    console.log({ stakingContract })
+
     const casterrankContract = await deployCasterNFTContract(
-        stakingContract.address,
-        prizePoolContract.address,
-        royaltyContract.address
+        stakingContract,
+        prizePoolContract,
+        royaltyContract
     )
 
     console.log("********************* Contracts Deployed *********************")
-    console.log("CasterRank NFT Contract: ", casterrankContract.address)
-    console.log("Staking Contract: ", stakingContract.address)
-    console.log("Prize Pool Contract: ", prizePoolContract.address)
-    console.log("Royalty Contract: ", royaltyContract.address)
+    console.log("CasterRank NFT Contract: ", casterrankContract)
+    console.log("Staking Contract: ", stakingContract)
+    console.log("Prize Pool Contract: ", prizePoolContract)
+    console.log("Royalty Contract: ", royaltyContract)
     console.log("**************************************************************")
 
-    const attachedStakingContract = await stakingContract.attach(stakingContract.address)
+    const stakingContractInstance = await ethers.getContractFactory("StakeNFT")
+    const attachedStakingContract = await stakingContractInstance.attach(stakingContract)
 
-    const attachedRoyalyContract = await royaltyContract.attach(royaltyContract.address)
+    const royaltyContractInstance = await ethers.getContractFactory("RoyaltyBank")
+    const attachedRoyalyContract = await royaltyContractInstance.attach(royaltyContract)
 
-    await attachedStakingContract.updateCasterRankContract(casterrankContract.address)
-    await attachedRoyalyContract.updateCasterRankContract(casterrankContract.address)
+    await attachedStakingContract.updateCasterNFTAddress(casterrankContract)
+    await attachedRoyalyContract.updateCasterNFTAddress(casterrankContract)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
