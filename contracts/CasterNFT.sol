@@ -160,14 +160,16 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 _amount
     ) public view returns (uint256) {
         uint256 totalPrice = 0;
-        uint256 tempCurrentSupply = tokenSupply[_tokenId];
+        uint256 currentTokenSupply = tokenSupply[_tokenId];
 
         for (uint256 i = 0; i < _amount; i++) {
-            if (tempCurrentSupply + i >= MAX_SUPPLY) {
+            if (currentTokenSupply + i >= MAX_SUPPLY) {
                 revert TokenSupplyExceeded(_tokenId, MAX_SUPPLY, msg.sender);
             }
 
-            uint256 bondingPrice = getBondingCurvePrice(tempCurrentSupply + i);
+            uint256 bondingPrice = getBondingCurvePrice(
+                currentTokenSupply + (i + 1)
+            );
 
             totalPrice += bondingPrice;
         }
@@ -177,7 +179,11 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
     function getBondingCurvePrice(
         uint256 _currentTokenId
-    ) public pure returns (uint256) {
+    ) internal pure returns (uint256) {
+        if (_currentTokenId == 1) {
+            return PRICE;
+        }
+
         // TODO: @abhishek fix the calculation
         // (currentToken ** 1.05) x 60
         return ((_currentTokenId * 1) * 60);
