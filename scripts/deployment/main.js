@@ -34,7 +34,7 @@ async function main() {
     const attachedRoyalyContract = await royaltyContract.attach(royaltyContract.address)
 
     await attachedStakingContract.updateCasterRankContract(casterrankContract.address)
-    await attachedStakingContract.updateCasterRankContract(royaltyContract.address)
+    await attachedRoyalyContract.updateCasterRankContract(casterrankContract.address)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
