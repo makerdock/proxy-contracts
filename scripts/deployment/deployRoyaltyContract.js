@@ -8,10 +8,10 @@ async function deployRoyaltyContract() {
 
     console.log("RoyaltyBank deployed to:", contract.address)
 
-    await run("verify:verify", {
-        address: contract.address,
-        constructorArguments: [],
-    })
+    // await run("verify:verify", {
+    //     address: contract.address,
+    //     constructorArguments: [],
+    // })
 
     return contract.address
 }
