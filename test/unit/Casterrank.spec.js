@@ -47,10 +47,10 @@ describe("CasterNFT", function () {
         })
 
         it("Should fail to mint tokens if max supply is reached", async function () {
-            await mockERC20.transfer(addr1.address, ethers.utils.parseUnits("100000", 18))
+            await mockERC20.transfer(addr1.address, ethers.utils.parseUnits("1000000000000000", 18))
             await mockERC20
                 .connect(addr1)
-                .approve(casterNFT.address, ethers.utils.parseUnits("100000", 18))
+                .approve(casterNFT.address, ethers.utils.parseUnits("1000000000000000", 18))
 
             for (let i = 0; i < 500; i++) {
                 await casterNFT.connect(addr1).mint(1, 1)
@@ -62,21 +62,29 @@ describe("CasterNFT", function () {
             )
         })
 
-        it("Should fail to mint tokens if insufficient ERC20 balance", async function () {
+        it("Should fail to mint tokens if insufficient ERC20 allowance", async function () {
             // Transfer some tokens to addr1 but not enough to mint
-            await mockERC20.transfer(addr1.address, ethers.utils.parseUnits("10", 6)) // Assuming 10 tokens are not enough
-
-            // Approve CasterNFT contract to spend addr1's tokens
-            await mockERC20
-                .connect(addr1)
-                .approve(casterNFT.address, ethers.utils.parseUnits("10", 6))
-
-            await casterNFT.connect(addr1).mint(1, 1)
+            await mockERC20.transfer(addr1.address, ethers.utils.parseUnits("10", 18)) // Assuming 10 tokens are not enough
 
             // Attempt to mint with insufficient balance
-            // await expect(casterNFT.connect(addr1).mint(1, 1)).to.be.revertedWith(
-            //     "ERC20: transfer amount exceeds balance"
-            // )
+            await expect(casterNFT.connect(addr1).mint(1, 1)).to.be.revertedWithCustomError(
+                casterNFT,
+                "InsufficientAllowance"
+            )
+        })
+
+        it("Should fail to mint tokens if insufficient ERC20 balance", async function () {
+            // Transfer some tokens to addr1 but not enough to mint
+            await mockERC20.transfer(addr1.address, ethers.utils.parseUnits("1", 18)) // Assuming 10 tokens are not enough
+
+            // Approve CasterNFT contract to spend addr1's tokens
+            await mockERC20.connect(addr1).approve(casterNFT.address, "80")
+
+            // Attempt to mint with insufficient balance
+            await expect(casterNFT.connect(addr1).mint(1, 1)).to.be.revertedWithCustomError(
+                casterNFT,
+                "InsufficientAllowance"
+            )
         })
     })
 
@@ -195,10 +203,10 @@ describe("CasterNFT", function () {
         })
 
         it("Should revert with TokenSupplyExceeded when exceeding max supply", async function () {
-            await mockERC20.transfer(addr1.address, ethers.utils.parseUnits("100000", 18))
+            await mockERC20.transfer(addr1.address, ethers.utils.parseUnits("1000000000000000", 18))
             await mockERC20
                 .connect(addr1)
-                .approve(casterNFT.address, ethers.utils.parseUnits("100000", 18))
+                .approve(casterNFT.address, ethers.utils.parseUnits("1000000000000000", 18))
 
             for (let i = 0; i < 500; i++) {
                 await casterNFT.connect(addr1).mint(1, 1)

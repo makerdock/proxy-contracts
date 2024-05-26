@@ -63,19 +63,19 @@ describe("RoyaltyBank", function () {
     describe("Claiming Rewards", function () {
         beforeEach(async function () {
             // Transfer tokens to royalty bank contract
-            await mockERC20.transfer(royaltyBank.address, ethers.utils.parseUnits("1000", 6))
+            await mockERC20.transfer(royaltyBank.address, ethers.utils.parseUnits("1000", 18))
 
             // Set rewards
             await royaltyBank
                 .connect(casterNFT)
-                .updateRewardsMapping(1, ethers.utils.parseUnits("100", 6))
+                .updateRewardsMapping(1, ethers.utils.parseUnits("100", 18))
         })
 
         it("Should allow claiming rewards by the creator", async function () {
             await royaltyBank.connect(backend).claimReward(1, addr1.address)
 
             expect(await mockERC20.balanceOf(addr1.address)).to.equal(
-                ethers.utils.parseUnits("100", 6)
+                ethers.utils.parseUnits("100", 18)
             )
             expect(await royaltyBank.royalties(1)).to.equal(0)
         })

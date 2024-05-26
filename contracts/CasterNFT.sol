@@ -5,7 +5,7 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {BackendGateway} from "./utils/BackendGateway.sol";
-import {InvalidAction, UnAuthorizedAction, TokenSupplyExceeded, InsufficientBalance, InvalidStakingAddress} from "./utils/Errors.sol";
+import {InvalidAction, InsufficientAllowance, TokenSupplyExceeded, InsufficientBalance, InvalidStakingAddress} from "./utils/Errors.sol";
 import {IStakeNFT} from "./interfaces/IStakeNFT.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IRoyaltyContract} from "./interfaces/IRoyaltyContract.sol";
@@ -23,7 +23,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     uint8 public constant CREATOR_CUT = 60; // 60 / 100 = 6%
     uint8 public constant POOL_CUT = 20; // 20 / 100 = 2%
 
-    uint16 public constant MAX_SUPPLY = 500;
+    uint16 public maxSupply = 500;
+    uint8 public erc20Decimals = 18;
     uint8 public constant PRICE = 80;
 
     mapping(uint256 => uint16) public currentTokenSupply;
@@ -37,6 +38,12 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
     function currentSupply(uint256 id) public view returns (uint256) {
         return currentTokenSupply[id];
+    }
+
+    function updateMaxSupply(
+        uint16 _newMaxSupply
+    ) public onlyOwner whenNotPaused {
+        maxSupply = _newMaxSupply;
     }
 
     function stakeNFTs(
@@ -86,11 +93,14 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             fundsToSendToUser += estimatedBondingPrice;
         }
 
+        fundsToSendToUser = formatPrice(fundsToSendToUser);
+
         uint256 leftFunds = fundsToSendToUser -
             (fundsToSendToUser * (TREASURY_CUT + POOL_CUT + CREATOR_CUT)) /
             100;
 
         super._burn(msg.sender, id, amount);
+
         distributeFunds(fundsToSendToUser, id, amount);
         erc20Instance.transfer(msg.sender, leftFunds);
     }
@@ -100,8 +110,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             revert InvalidAction(msg.sender, id);
         }
 
-        if (currentSupply(id) == MAX_SUPPLY) {
-            revert TokenSupplyExceeded(id, MAX_SUPPLY, msg.sender);
+        if (currentSupply(id) == maxSupply) {
+            revert TokenSupplyExceeded(id, maxSupply, msg.sender);
         }
 
         uint256 mintPrice = 0;
@@ -116,6 +126,12 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
                 );
                 mintPrice += estimatedBondingPrice;
             }
+        }
+
+        mintPrice = formatPrice(mintPrice);
+
+        if (mintPrice > erc20Instance.allowance(msg.sender, address(this))) {
+            revert InsufficientAllowance(msg.sender, mintPrice);
         }
 
         erc20Instance.transferFrom(msg.sender, address(this), mintPrice);
@@ -164,8 +180,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 tokenSupply = currentTokenSupply[_tokenId];
 
         for (uint256 i = 0; i < _amount; i++) {
-            if (tokenSupply + i >= MAX_SUPPLY) {
-                revert TokenSupplyExceeded(_tokenId, MAX_SUPPLY, msg.sender);
+            if (tokenSupply + i >= maxSupply) {
+                revert TokenSupplyExceeded(_tokenId, maxSupply, msg.sender);
             }
 
             uint256 bondingPrice = getBondingCurvePrice(tokenSupply + (i + 1));
@@ -218,5 +234,15 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     }
     function unpause() public onlyOwner whenPaused {
         _unpause();
+    }
+
+    function formatPrice(uint256 _price) public view returns (uint256) {
+        return _price * 10 ** erc20Decimals;
+    }
+
+    function updateERC20Decimals(
+        uint8 _decimals
+    ) public onlyOwner whenNotPaused {
+        erc20Decimals = _decimals;
     }
 }
