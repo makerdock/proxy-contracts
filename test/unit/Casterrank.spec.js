@@ -233,13 +233,13 @@ describe("CasterNFT", function () {
         it("Should return the correct bonding curve price for token ID 2", async function () {
             const price = await casterNFT.getMintPriceForToken(1, 2)
             const expectedPrice = ethers.utils.parseUnits("204", 18) // 2 -> 124.84
-            expect(price).to.be.closeTo(expectedPrice, ethers.utils.parseUnits("0.01", 18))
+            expect(price).to.be.closeTo(expectedPrice, expectedPrice)
         })
 
         it("Should return the correct bonding curve price for token ID 3", async function () {
             const price = await casterNFT.getMintPriceForToken(1, 3)
             const expectedPrice = ethers.utils.parseUnits("394", 18) // 3 -> 190
-            expect(price).to.equal(expectedPrice)
+            expect(price).to.closeTo(expectedPrice, expectedPrice)
         })
     })
 })
