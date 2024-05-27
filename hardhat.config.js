@@ -5,7 +5,7 @@ require("dotenv").config()
 const COMPILER_SETTINGS = {
     optimizer: {
         enabled: true,
-        runs: 1000000,
+        runs: 200,
     },
     metadata: {
         bytecodeHash: "none",
