@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.2",
+    "@prb/math": "^4.0.2",
     "abdk-libraries-solidity": "^3.2.0",
     "dotenv": "^16.0.3"
   },

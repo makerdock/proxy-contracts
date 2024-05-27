@@ -2,31 +2,45 @@ const { expect } = require("chai")
 const { ethers } = require("hardhat")
 
 describe("StakeNFT", function () {
-    let StakeNFT, stakeNFT, CasterNFT, casterNFT, owner, addr1, addr2, backend
+    let StakeNFT, stakeNFT, casterNFT, CasterNFT, owner, addr1, addr2, backend
 
     beforeEach(async function () {
-        ;[owner, addr1, addr2, backend] = await ethers.getSigners()
+        ;[owner, addr1, addr2, backend, prizePool, treasury] = await ethers.getSigners()
 
         MockERC20 = await ethers.getContractFactory("MockERC20")
         mockERC20 = await MockERC20.deploy()
         await mockERC20.deployed()
 
-        // Deploy CasterNFT contract
-        CasterNFT = await ethers.getContractFactory("CasterNFT")
-        casterNFT = await CasterNFT.deploy(mockERC20.address)
-        await casterNFT.deployed()
-
-        // Deploy StakeNFT contract
         StakeNFT = await ethers.getContractFactory("StakeNFT")
         stakeNFT = await StakeNFT.deploy()
         await stakeNFT.deployed()
 
-        // Set CasterNFT contract address
+        // Update CasterNFT address
+
+        CasterNFT = await ethers.getContractFactory("CasterNFT")
+        casterNFT = await CasterNFT.deploy(mockERC20.address)
+        await casterNFT.deployed()
+
+        RoyaltyBank = await ethers.getContractFactory("RoyaltyBank")
+        royaltyBank = await RoyaltyBank.deploy()
+        await royaltyBank.deployed()
+
+        await casterNFT.updateTreasuryAddress(treasury.address)
+        await casterNFT.updatePrizePoolAddress(prizePool.address)
+        await casterNFT.updateRoyaltyContractAddress(royaltyBank.address)
+
+        await royaltyBank.updateCasterNFTAddress(casterNFT.address)
         await stakeNFT.updateCasterNFTAddress(casterNFT.address)
+        await stakeNFT.updateServerWallet(backend.address)
 
         // Mint some NFTs to addr1
-        await casterNFT.connect(addr1).mint(addr1.address, 1, 10, "0x")
-        await casterNFT.connect(addr1).mint(addr1.address, 2, 5, "0x")
+        await mockERC20.transfer(addr1.address, ethers.utils.parseEther("1000000000000")) // Transfer some mock tokens to addr1
+        await mockERC20
+            .connect(addr1)
+            .approve(casterNFT.address, ethers.utils.parseEther("1000000000000"))
+
+        await casterNFT.connect(addr1).mint(1, 10)
+        await casterNFT.connect(addr1).mint(2, 5)
     })
 
     describe("Deployment", function () {
@@ -40,7 +54,9 @@ describe("StakeNFT", function () {
             const ids = [1, 2]
             const amounts = [5, 3]
             const nonce = 1
-            const signature = await generateSignature(addr1, nonce)
+            const signature = await generateSignature(addr1.address, nonce)
+
+            console.log({ signature })
 
             await casterNFT.connect(addr1).setApprovalForAll(stakeNFT.address, true)
 
@@ -56,13 +72,13 @@ describe("StakeNFT", function () {
             const ids = [1, 2]
             const amounts = [11, 6] // Exceeding owned amounts
             const nonce = 1
-            const signature = await generateSignature(addr1, nonce)
+            const signature = await generateSignature(addr1.address, nonce)
 
             await casterNFT.connect(addr1).setApprovalForAll(stakeNFT.address, true)
 
             await expect(
                 stakeNFT.connect(backend).stakeNFTs(addr1.address, ids, amounts, signature, nonce)
-            ).to.be.revertedWith("InsufficientBalance")
+            ).to.be.revertedWithCustomError(stakeNFT, "InsufficientBalance")
         })
 
         it("Should revert if signature is invalid", async function () {
@@ -86,7 +102,7 @@ describe("StakeNFT", function () {
             const ids = [1, 2]
             const amounts = [5, 3]
             const nonce = 1
-            const signature = await generateSignature(addr1, nonce)
+            const signature = await generateSignature(addr1.address, nonce)
 
             await casterNFT.connect(addr1).setApprovalForAll(stakeNFT.address, true)
             await stakeNFT.connect(backend).stakeNFTs(addr1.address, ids, amounts, signature, nonce)
@@ -103,18 +119,17 @@ describe("StakeNFT", function () {
         })
 
         it("Should revert if non-owner tries to unstake", async function () {
-            await expect(stakeNFT.connect(addr2).unstake(1)).to.be.revertedWith(
+            await expect(stakeNFT.connect(addr2).unstake(1)).to.be.revertedWithCustomError(
+                stakeNFT,
                 "UnAuthorizedAction"
             )
         })
     })
 
-    async function generateSignature(user, nonce) {
-        // This function should generate a valid signature for the staking
-        // The implementation of this function depends on the verifySignature logic in your contract
-        // Assuming a simple signature logic here for demonstration purposes
-        const message = ethers.utils.solidityKeccak256(["address", "uint32"], [user.address, nonce])
+    async function generateSignature(address, nonce) {
+        const message = ethers.utils.solidityKeccak256(["address", "uint32"], [address, nonce])
         const messageBytes = ethers.utils.arrayify(message)
-        return await user.signMessage(messageBytes)
+        const signature = await backend.signMessage(messageBytes)
+        return signature
     }
 })
