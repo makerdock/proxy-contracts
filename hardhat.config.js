@@ -38,6 +38,7 @@ module.exports = {
             },
         ],
     },
+    allowUnlimitedContractSize: true,
     networks: {
         hardhat: {
             hardfork: "merge",

@@ -104,10 +104,14 @@ describe("CasterNFT", function () {
             // Approve CasterNFT contract to spend addr1's tokens
             await mockERC20
                 .connect(addr1)
-                .approve(casterNFT.address, ethers.utils.parseUnits("1000", 18))
+                .approve(casterNFT.address, ethers.utils.parseUnits("10000", 18))
 
             // Mint an NFT for addr1
             await casterNFT.connect(addr1).mint(1, 1)
+
+            console.log(await casterNFT.balanceOf(addr1.address, 1))
+            console.log(await mockERC20.balanceOf(addr1.address))
+            console.log(await mockERC20.balanceOf(casterNFT.address))
 
             // Ensure the token was minted
             expect(await casterNFT.currentSupply(1)).to.equal(1)

@@ -9,6 +9,7 @@ import {InvalidAction, InsufficientAllowance, TokenSupplyExceeded, InsufficientB
 import {IStakeNFT} from "./interfaces/IStakeNFT.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IRoyaltyContract} from "./interfaces/IRoyaltyContract.sol";
+import {ABDKMathQuadLib} from "./utils/ABDKMathQuadLib.sol";
 
 contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     IERC20 public erc20Instance;
@@ -19,9 +20,9 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
     mapping(address => uint8) private whitelistedStakingContracts;
 
-    uint8 public constant TREASURY_CUT = 20; // 20 / 100 = 2%
-    uint8 public constant CREATOR_CUT = 60; // 60 / 100 = 6%
-    uint8 public constant POOL_CUT = 20; // 20 / 100 = 2%
+    uint8 public constant TREASURY_CUT = 2; // 2 / 100 = 2%
+    uint8 public constant CREATOR_CUT = 6; // 6 / 100 = 6%
+    uint8 public constant POOL_CUT = 2; // 2 / 100 = 2%
 
     uint16 public maxSupply = 500;
     uint8 public erc20Decimals = 18;
@@ -158,9 +159,9 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         uint256 _id,
         uint16 _amount
     ) internal {
-        uint256 treasuryCut = (totalPrice * TREASURY_CUT) / 1000;
-        uint256 poolCut = (totalPrice * POOL_CUT) / 1000;
-        uint256 creatorCut = (totalPrice * CREATOR_CUT) / 1000;
+        uint256 treasuryCut = (totalPrice * TREASURY_CUT) / 100;
+        uint256 poolCut = (totalPrice * POOL_CUT) / 100;
+        uint256 creatorCut = (totalPrice * CREATOR_CUT) / 100;
 
         erc20Instance.transfer(TREASURY_ADDRESS, treasuryCut);
         erc20Instance.transfer(PRIZE_POOL_ADDRESS, poolCut);
@@ -199,9 +200,11 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             return PRICE;
         }
 
-        // TODO: @abhishek fix the calculation
-        // (currentToken ** 1.05) x 60
-        return ((_currentTokenId * 1) * 60);
+        return ABDKMathQuadLib.powAndMultiply(_currentTokenId);
+
+        // // TODO: @abhishek fix the calculation
+        // // (currentToken ** 1.05) x 60
+        // return ((_currentTokenId * 1) * 60);
     }
 
     function updateWhitelistedStakingContracts(
