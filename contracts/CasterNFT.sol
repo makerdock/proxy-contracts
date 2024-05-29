@@ -148,6 +148,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
             revert InvalidAction(_userAddress, _tokenId);
         }
 
+        mintSelfNFT[_userAddress] = true;
+
         _mint(_userAddress, _tokenId, 1, "");
         currentTokenSupply[_tokenId] += 1;
     }
@@ -167,7 +169,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
         IRoyaltyContract(ROYALTY_CONTRACT_ADDRESS).updateRewardsMapping(
             _id,
-            _amount
+            creatorCut
         );
     }
 
