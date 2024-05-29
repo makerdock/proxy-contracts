@@ -6,9 +6,17 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {InvalidAddress, UnAuthorizedAction, InsufficientFunds} from "./utils/Errors.sol";
 
 contract RoyaltyBank is BackendGateway {
-    address public TOKEN_CONTRACT_ADDRESS = address(0);
-    address public CASTER_NFT_ADDRESS = address(0);
+    address public TOKEN_CONTRACT_ADDRESS;
+    address public CASTER_NFT_ADDRESS;
     mapping(uint256 => uint256) public royalties;
+
+    // Events
+    event RewardsMappingUpdated(uint256 indexed id, uint256 reward);
+    event RewardClaimed(
+        uint256 indexed id,
+        address indexed creatorAddress,
+        uint256 reward
+    );
 
     function updateRewardsMapping(uint256 id, uint256 reward) public {
         if (msg.sender != CASTER_NFT_ADDRESS) {
@@ -20,6 +28,7 @@ contract RoyaltyBank is BackendGateway {
         } else {
             royalties[id] += reward;
         }
+        emit RewardsMappingUpdated(id, reward);
     }
 
     function updateCasterNFTAddress(
@@ -49,8 +58,8 @@ contract RoyaltyBank is BackendGateway {
         IERC20 token = IERC20(TOKEN_CONTRACT_ADDRESS);
         if (token.balanceOf(address(this)) >= rewards) {
             royalties[id] = 0;
-
-            IERC20(TOKEN_CONTRACT_ADDRESS).transfer(creatorAddress, rewards);
+            token.transfer(creatorAddress, rewards);
+            emit RewardClaimed(id, creatorAddress, rewards);
         } else {
             revert InsufficientFunds(address(this), rewards);
         }

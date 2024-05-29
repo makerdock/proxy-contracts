@@ -5,8 +5,7 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {BackendGateway} from "./utils/BackendGateway.sol";
-import {InvalidAction, InsufficientAllowance, TokenSupplyExceeded, InsufficientBalance, InvalidStakingAddress} from "./utils/Errors.sol";
-import {IStakeNFT} from "./interfaces/IStakeNFT.sol";
+import {InvalidAction, InsufficientAllowance, TokenSupplyExceeded, InsufficientBalance} from "./utils/Errors.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IRoyaltyContract} from "./interfaces/IRoyaltyContract.sol";
 // import {ABDKMathQuadLib} from "./utils/ABDKMathQuadLib.sol";
@@ -18,8 +17,6 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     address public PRIZE_POOL_ADDRESS;
     address public ROYALTY_CONTRACT_ADDRESS;
 
-    mapping(address => uint8) private whitelistedStakingContracts;
-
     uint8 public constant TREASURY_CUT = 2;
     uint8 public constant CREATOR_CUT = 6;
     uint8 public constant POOL_CUT = 2;
@@ -30,7 +27,9 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
     mapping(uint256 => uint16) public currentTokenSupply;
     mapping(address => bool) public mintSelfNFT;
 
-    event Minted(address indexed minter, uint256 indexed id, uint8 amount);
+    event MintedNFT(address indexed user, uint256 indexed id, uint8 amount);
+    event ForfeitedNFT(address indexed user, uint256 indexed id, uint8 amount);
+    event SelfMint(address indexed user, uint256 indexed id);
 
     constructor(address _erc20Address) ERC1155("https://ipfs.io/ipfs/QmZ9") {
         erc20Instance = IERC20(_erc20Address);
@@ -46,38 +45,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         maxSupply = _newMaxSupply;
     }
 
-    function forfeitNFT(uint256 id, uint8 amount) public whenNotPaused {
-        if (amount == 0) {
-            revert InvalidAction(msg.sender, id);
-        }
-
-        if (amount > balanceOf(msg.sender, id)) {
-            revert InsufficientBalance(msg.sender, id, amount);
-        }
-
-        currentTokenSupply[id] -= amount;
-
-        uint256 fundsToSendToUser = 0;
-
-        for (uint256 i = 1; i <= amount; i++) {
-            uint256 estimatedBondingPrice = getBondingCurvePrice(
-                currentTokenSupply[id] - i
-            );
-            fundsToSendToUser += estimatedBondingPrice;
-        }
-
-        fundsToSendToUser = formatPrice(fundsToSendToUser);
-
-        uint256 leftFunds = (fundsToSendToUser *
-            (100 - (TREASURY_CUT + POOL_CUT + CREATOR_CUT))) / 100;
-
-        super._burn(msg.sender, id, amount);
-
-        distributeFunds(fundsToSendToUser, id);
-        erc20Instance.transfer(msg.sender, leftFunds);
-    }
-
-    function mint(uint256 id, uint16 amount) public payable whenNotPaused {
+    function mint(uint256 id, uint8 amount) public payable whenNotPaused {
         if (amount == 0) {
             revert InvalidAction(msg.sender, id);
         }
@@ -110,6 +78,8 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         _mint(msg.sender, id, amount, "");
 
         currentTokenSupply[id] += amount;
+
+        emit MintedNFT(msg.sender, id, amount);
     }
 
     function mintSelfCreatorNFT(
@@ -124,6 +94,41 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
 
         _mint(_userAddress, _tokenId, 1, "");
         currentTokenSupply[_tokenId] += 1;
+
+        emit SelfMint(msg.sender, _tokenId);
+    }
+
+    function forfeitNFT(uint256 id, uint8 amount) public whenNotPaused {
+        if (amount == 0) {
+            revert InvalidAction(msg.sender, id);
+        }
+
+        if (amount > balanceOf(msg.sender, id)) {
+            revert InsufficientBalance(msg.sender, id, amount);
+        }
+
+        currentTokenSupply[id] -= amount;
+
+        uint256 fundsToSendToUser = 0;
+
+        for (uint256 i = 1; i <= amount; i++) {
+            uint256 estimatedBondingPrice = getBondingCurvePrice(
+                currentTokenSupply[id] - i
+            );
+            fundsToSendToUser += estimatedBondingPrice;
+        }
+
+        fundsToSendToUser = formatPrice(fundsToSendToUser);
+
+        uint256 leftFunds = (fundsToSendToUser *
+            (100 - (TREASURY_CUT + POOL_CUT + CREATOR_CUT))) / 100;
+
+        super._burn(msg.sender, id, amount);
+
+        distributeFunds(fundsToSendToUser, id);
+        erc20Instance.transfer(msg.sender, leftFunds);
+
+        emit ForfeitedNFT(msg.sender, id, amount);
     }
 
     function distributeFunds(uint256 totalPrice, uint256 _id) internal {
@@ -171,13 +176,6 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         // return ABDKMathQuadLib.powAndMultiply(_currentTokenId);
 
         return (_currentTokenId) * 60;
-    }
-
-    function updateWhitelistedStakingContracts(
-        address _stakingContractAddress,
-        uint8 _isWhitelisted
-    ) public onlyOwner whenNotPaused {
-        whitelistedStakingContracts[_stakingContractAddress] = _isWhitelisted;
     }
 
     function updateTreasuryAddress(
