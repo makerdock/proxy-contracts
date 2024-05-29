@@ -9,6 +9,9 @@ contract PrizePool is BackendGateway {
     mapping(address => uint256) public winnerMapping;
     address public TOKEN_CONTRACT_ADDRESS = address(0);
 
+    event WinnerMappingUpdated(address indexed winner, uint256 amount);
+    event WinningsClaimed(address indexed winner, uint256 amount);
+
     function updateTokenContractAddress(
         address _newTokenContract
     ) public onlyOwner {
@@ -31,6 +34,7 @@ contract PrizePool is BackendGateway {
             } else {
                 winnerMapping[_winningAddresses[i]] = _winningAmount[i];
             }
+            emit WinnerMappingUpdated(_winningAddresses[i], _winningAmount[i]);
         }
     }
 
@@ -42,6 +46,7 @@ contract PrizePool is BackendGateway {
                 uint256 winnings = winnerMapping[msg.sender];
                 winnerMapping[msg.sender] = 0;
                 token.transfer(msg.sender, winnings);
+                emit WinningsClaimed(msg.sender, winnings);
             } else {
                 revert InsufficientFunds(
                     address(this),
