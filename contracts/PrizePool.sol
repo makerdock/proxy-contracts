@@ -3,11 +3,11 @@ pragma solidity ^0.8.25;
 
 import {BackendGateway} from "./utils/BackendGateway.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {InvalidParams, InsufficientFunds} from "./utils/Errors.sol";
+import {InvalidParams, InsufficientFunds, InvalidAddress} from "./utils/Errors.sol";
 
 contract PrizePool is BackendGateway {
     mapping(address => uint256) public winnerMapping;
-    address public TOKEN_CONTRACT_ADDRESS = address(0);
+    address public TOKEN_CONTRACT_ADDRESS;
 
     event WinnerMappingUpdated(address indexed winner, uint256 amount);
     event WinningsClaimed(address indexed winner, uint256 amount);
@@ -15,7 +15,10 @@ contract PrizePool is BackendGateway {
     function updateTokenContractAddress(
         address _newTokenContract
     ) public onlyOwner {
-        require(_newTokenContract != address(0), "Invalid address");
+        if (_newTokenContract == address(0)) {
+            revert InvalidAddress(_newTokenContract);
+        }
+
         TOKEN_CONTRACT_ADDRESS = _newTokenContract;
     }
 
