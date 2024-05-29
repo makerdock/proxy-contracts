@@ -95,7 +95,7 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         _mint(_userAddress, _tokenId, 1, "");
         currentTokenSupply[_tokenId] += 1;
 
-        emit SelfMint(msg.sender, _tokenId);
+        emit SelfMint(_userAddress, _tokenId);
     }
 
     function forfeitNFT(uint256 id, uint8 amount) public whenNotPaused {
