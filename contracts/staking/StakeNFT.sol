@@ -3,8 +3,8 @@ pragma solidity ^0.8.25;
 
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
-import {BackendGateway} from "./utils/BackendGateway.sol";
-import {InsufficientBalance, UnAuthorizedAction} from "./utils/Errors.sol";
+import {BackendGateway} from "../utils/BackendGateway.sol";
+import {InsufficientBalance, UnAuthorizedAction} from "../utils/Errors.sol";
 
 contract StakeNFT is ERC1155Holder, BackendGateway {
     address public CASTER_NFT_CONTRACT_ADDRESS = address(0);
