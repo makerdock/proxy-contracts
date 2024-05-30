@@ -6,39 +6,25 @@
 // global scope, and execute the script.
 const { run } = require("hardhat")
 const { deployCasterNFTContract } = require("./deployNFTContract")
-const { deployStakingContract } = require("./deployStakingContract")
 const { deployPrizePoolContract } = require("./deployPrizePoolContract")
 const { deployRoyaltyContract } = require("./deployRoyaltyContract")
 
 async function main() {
     await run("compile")
 
-    const stakingContract = await deployStakingContract()
     const prizePoolContract = await deployPrizePoolContract()
     const royaltyContract = await deployRoyaltyContract()
-
-    console.log({ stakingContract })
-
-    const casterrankContract = await deployCasterNFTContract(
-        stakingContract,
-        prizePoolContract,
-        royaltyContract
-    )
+    const casterrankContract = await deployCasterNFTContract(prizePoolContract, royaltyContract)
 
     console.log("********************* Contracts Deployed *********************")
     console.log("CasterRank NFT Contract: ", casterrankContract)
-    console.log("Staking Contract: ", stakingContract)
     console.log("Prize Pool Contract: ", prizePoolContract)
     console.log("Royalty Contract: ", royaltyContract)
     console.log("**************************************************************")
 
-    const stakingContractInstance = await ethers.getContractFactory("StakeNFT")
-    const attachedStakingContract = await stakingContractInstance.attach(stakingContract)
-
     const royaltyContractInstance = await ethers.getContractFactory("RoyaltyBank")
     const attachedRoyalyContract = await royaltyContractInstance.attach(royaltyContract)
 
-    await attachedStakingContract.updateCasterNFTAddress(casterrankContract)
     await attachedRoyalyContract.updateCasterNFTAddress(casterrankContract)
 }
 
