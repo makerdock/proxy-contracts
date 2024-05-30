@@ -4,8 +4,9 @@ pragma solidity ^0.8.25;
 import {BackendGateway} from "./utils/BackendGateway.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {InvalidParams, InsufficientFunds, InvalidAddress} from "./utils/Errors.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract PrizePool is BackendGateway {
+contract PrizePool is BackendGateway, ReentrancyGuard {
     mapping(address => uint256) public winnerMapping;
     address public TOKEN_CONTRACT_ADDRESS;
 
@@ -41,7 +42,7 @@ contract PrizePool is BackendGateway {
         }
     }
 
-    function claimWinnings() public {
+    function claimWinnings() public nonReentrant {
         IERC20 token = IERC20(TOKEN_CONTRACT_ADDRESS);
 
         if (winnerMapping[msg.sender] > 0) {
