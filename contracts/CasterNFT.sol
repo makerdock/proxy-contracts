@@ -8,9 +8,16 @@ import {BackendGateway} from "./utils/BackendGateway.sol";
 import {InvalidAction, InsufficientAllowance, TokenSupplyExceeded, InsufficientBalance} from "./utils/Errors.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IRoyaltyContract} from "./interfaces/IRoyaltyContract.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 // import {ABDKMathQuadLib} from "./utils/ABDKMathQuadLib.sol";
 
-contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
+contract CasterNFT is
+    ERC1155,
+    Ownable,
+    Pausable,
+    BackendGateway,
+    ReentrancyGuard
+{
     IERC20 public erc20Instance;
 
     address public TREASURY_ADDRESS;
@@ -98,7 +105,10 @@ contract CasterNFT is ERC1155, Ownable, Pausable, BackendGateway {
         emit SelfMint(_userAddress, _tokenId);
     }
 
-    function forfeitNFT(uint256 id, uint8 amount) public whenNotPaused {
+    function forfeitNFT(
+        uint256 id,
+        uint8 amount
+    ) public whenNotPaused nonReentrant {
         if (amount == 0) {
             revert InvalidAction(msg.sender, id);
         }
