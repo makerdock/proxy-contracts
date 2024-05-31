@@ -11,6 +11,7 @@
     "deploy:base": "hardhat run scripts/deployment/main.js --network base",
     "deploy:sepolia": "hardhat run scripts/deployment/main.js --network baseSepolia",
     "deploy:local": "hardhat run scripts/deployment/main.js --network localhost",
+    "deploy:degen": "hardhat run scripts/deployment/main.js --network degen",
     "lint": "solhint 'contracts/*.sol'",
     "lint:fix": "solhint 'contracts/**/*.sol' --fix",
     "format": "prettier --write .",

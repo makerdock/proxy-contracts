@@ -67,6 +67,7 @@ module.exports = {
         apiKey: {
             base: BASESCAN_API_KEY,
             baseSepolia: BASESCAN_API_KEY,
+            degen: "random",
         },
         sourcify: {
             enabled: true,
@@ -85,6 +86,7 @@ module.exports = {
                 chainId: 666666666,
                 urls: {
                     apiURL: "https://explorer.degen.tips/api/",
+                    browserURL: "https://explorer.degen.tips/",
                 },
             },
         ],

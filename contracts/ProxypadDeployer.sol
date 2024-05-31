@@ -41,7 +41,7 @@ contract Token is ERC20 {
     }
 }
 
-contract TokepadDeployer is Ownable(msg.sender) {
+contract ProxypadDeployer is Ownable(msg.sender) {
     // 2.5% tax
     address internal TAX_RECIPIENT = 0xeba814370974756Ab572D9e804187fd72A2Ab58a;
 
@@ -83,7 +83,6 @@ contract TokepadDeployer is Ownable(msg.sender) {
     }
 
     function updateTaxRecipient(address _newRecipient) external onlyOwner {
-        require(msg.sender == TAX_RECIPIENT, "!auth");
         TAX_RECIPIENT = _newRecipient;
     }
 }
