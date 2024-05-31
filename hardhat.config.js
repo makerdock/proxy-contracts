@@ -1,4 +1,9 @@
-require("@nomicfoundation/hardhat-toolbox")
+require("@nomicfoundation/hardhat-chai-matchers")
+require("@nomiclabs/hardhat-ethers")
+require("@typechain/hardhat")
+require("hardhat-gas-reporter")
+require("solidity-coverage")
+require("@nomicfoundation/hardhat-verify")
 require("./tasks")
 require("dotenv").config()
 
@@ -51,6 +56,11 @@ module.exports = {
             accounts: [PRIVATE_KEY],
             chainId: 8453,
         },
+        degen: {
+            url: "https://rpc.degen.tips",
+            accounts: [PRIVATE_KEY],
+            chainId: 666666666,
+        },
     },
     defaultNetwork: "hardhat",
     etherscan: {
@@ -70,6 +80,13 @@ module.exports = {
                     browserURL: BASE_SEPOLIA_ETH_BROWSER,
                 },
             },
+            {
+                network: "degen",
+                chainId: 666666666,
+                urls: {
+                    apiURL: "https://explorer.degen.tips/api/",
+                },
+            },
         ],
     },
     gasReporter: {
@@ -77,10 +94,6 @@ module.exports = {
         currency: "USD",
         outputFile: "gas-report.txt",
         noColors: true,
-    },
-    contractSizer: {
-        runOnCompile: false,
-        only: ["CasterNFT"],
     },
     paths: {
         sources: "./contracts",
