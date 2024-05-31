@@ -41,6 +41,7 @@
     "typechain": "^8.1.0"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-verify": "^2.0.7",
     "@openzeppelin/contracts": "^5.0.2",
     "@prb/math": "^4.0.2",
     "abdk-libraries-solidity": "^3.2.0",
