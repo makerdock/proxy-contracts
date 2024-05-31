@@ -49,8 +49,9 @@ contract ProxypadDeployer is Ownable(msg.sender) {
     event NewToken(
         address indexed token,
         address indexed creator,
-        uint256 maxSupply,
-        uint256 deployerAmount
+        string tokenName,
+        string tokenSymbol,
+        uint256 maxSupply
     );
 
     function deploy(
@@ -77,7 +78,7 @@ contract ProxypadDeployer is Ownable(msg.sender) {
             t.transfer(msg.sender, deployerAmount);
         }
 
-        emit NewToken(address(t), msg.sender, _maxSupply, deployerAmount);
+        emit NewToken(address(t), msg.sender, _name, _symbol, _maxSupply);
 
         return address(t);
     }
