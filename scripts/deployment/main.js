@@ -5,29 +5,12 @@
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
 const { run } = require("hardhat")
-const { deployCasterNFTContract } = require("./deployNFTContract")
-const { deployPrizePoolContract } = require("./deployPrizePoolContract")
-const { deployRoyaltyContract } = require("./deployRoyaltyContract")
-const { deployTicketContract } = require("./deployTicketContract")
+const { deployProxypadDeployer } = require("./deployProxypadDeployer")
 
 async function main() {
     await run("compile")
 
-    const ticketContract = await deployTicketContract()
-    const prizePoolContract = await deployPrizePoolContract()
-    const royaltyContract = await deployRoyaltyContract()
-    const casterrankContract = await deployCasterNFTContract(prizePoolContract, royaltyContract)
-
-    console.log("********************* Contracts Deployed *********************")
-    console.log("CasterRank NFT Contract: ", casterrankContract)
-    console.log("Prize Pool Contract: ", prizePoolContract)
-    console.log("Royalty Contract: ", royaltyContract)
-    console.log("**************************************************************")
-
-    const royaltyContractInstance = await ethers.getContractFactory("RoyaltyBank")
-    const attachedRoyalyContract = await royaltyContractInstance.attach(royaltyContract)
-
-    await attachedRoyalyContract.updateCasterNFTAddress(casterrankContract)
+    await deployProxypadDeployer()
 }
 
 // We recommend this pattern to be able to use async/await everywhere
