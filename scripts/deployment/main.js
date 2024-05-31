@@ -8,10 +8,12 @@ const { run } = require("hardhat")
 const { deployCasterNFTContract } = require("./deployNFTContract")
 const { deployPrizePoolContract } = require("./deployPrizePoolContract")
 const { deployRoyaltyContract } = require("./deployRoyaltyContract")
+const { deployTicketContract } = require("./deployTicketContract")
 
 async function main() {
     await run("compile")
 
+    const ticketContract = await deployTicketContract()
     const prizePoolContract = await deployPrizePoolContract()
     const royaltyContract = await deployRoyaltyContract()
     const casterrankContract = await deployCasterNFTContract(prizePoolContract, royaltyContract)
