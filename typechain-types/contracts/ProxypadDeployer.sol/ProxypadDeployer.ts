@@ -86,7 +86,7 @@ export interface ProxypadDeployerInterface extends utils.Interface {
   ): Result;
 
   events: {
-    "NewToken(address,address,uint256,uint256)": EventFragment;
+    "NewToken(address,address,string,string,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
   };
 
@@ -97,11 +97,12 @@ export interface ProxypadDeployerInterface extends utils.Interface {
 export interface NewTokenEventObject {
   token: string;
   creator: string;
+  tokenName: string;
+  tokenSymbol: string;
   maxSupply: BigNumber;
-  deployerAmount: BigNumber;
 }
 export type NewTokenEvent = TypedEvent<
-  [string, string, BigNumber, BigNumber],
+  [string, string, string, string, BigNumber],
   NewTokenEventObject
 >;
 
@@ -223,17 +224,19 @@ export interface ProxypadDeployer extends BaseContract {
   };
 
   filters: {
-    "NewToken(address,address,uint256,uint256)"(
+    "NewToken(address,address,string,string,uint256)"(
       token?: PromiseOrValue<string> | null,
       creator?: PromiseOrValue<string> | null,
-      maxSupply?: null,
-      deployerAmount?: null
+      tokenName?: null,
+      tokenSymbol?: null,
+      maxSupply?: null
     ): NewTokenEventFilter;
     NewToken(
       token?: PromiseOrValue<string> | null,
       creator?: PromiseOrValue<string> | null,
-      maxSupply?: null,
-      deployerAmount?: null
+      tokenName?: null,
+      tokenSymbol?: null,
+      maxSupply?: null
     ): NewTokenEventFilter;
 
     "OwnershipTransferred(address,address)"(

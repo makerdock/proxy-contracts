@@ -105,10 +105,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CasterNFT__factory>;
     getContractFactory(
-      name: "NonFungibleContract",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.NonFungibleContract__factory>;
-    getContractFactory(
       name: "IRoyaltyContract",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IRoyaltyContract__factory>;
@@ -116,14 +112,6 @@ declare module "hardhat/types/runtime" {
       name: "IStakeNFT",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IStakeNFT__factory>;
-    getContractFactory(
-      name: "LockerFactory",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.LockerFactory__factory>;
-    getContractFactory(
-      name: "LpLocker",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.LpLocker__factory>;
     getContractFactory(
       name: "PrizePool",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -273,11 +261,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.CasterNFT>;
     getContractAt(
-      name: "NonFungibleContract",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.NonFungibleContract>;
-    getContractAt(
       name: "IRoyaltyContract",
       address: string,
       signer?: ethers.Signer
@@ -287,16 +270,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IStakeNFT>;
-    getContractAt(
-      name: "LockerFactory",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.LockerFactory>;
-    getContractAt(
-      name: "LpLocker",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.LpLocker>;
     getContractAt(
       name: "PrizePool",
       address: string,
