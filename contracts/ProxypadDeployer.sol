@@ -74,6 +74,10 @@ contract ProxypadDeployer is Ownable(msg.sender) {
         // 3. Deployer keeps the rest
         uint256 deployerAmount = _maxSupply - taxAmount - _sum;
 
+        if (_sum > 0) {
+            t.transfer(address(t), _sum);
+        }
+
         if (deployerAmount > 0) {
             t.transfer(msg.sender, deployerAmount);
         }
