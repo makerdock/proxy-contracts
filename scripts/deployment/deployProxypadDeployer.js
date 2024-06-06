@@ -1,7 +1,7 @@
 const { ethers, run } = require("hardhat")
 
 async function deployProxypadDeployer() {
-    const proxyPadInstance = await ethers.getContractFactory("ProxypadDeployer")
+    const proxyPadInstance = await ethers.getContractFactory("ProxypadDeployerLP")
     const contract = await proxyPadInstance.deploy()
 
     await contract.deployed()

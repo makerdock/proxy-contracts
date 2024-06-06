@@ -29,6 +29,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC721Errors__factory>;
     getContractFactory(
+      name: "Clones",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Clones__factory>;
+    getContractFactory(
       name: "ERC1155",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC1155__factory>;
@@ -64,6 +68,14 @@ declare module "hardhat/types/runtime" {
       name: "IERC721",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC721__factory>;
+    getContractFactory(
+      name: "IERC721Receiver",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC721Receiver__factory>;
+    getContractFactory(
+      name: "ERC721Holder",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC721Holder__factory>;
     getContractFactory(
       name: "Address",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -113,6 +125,22 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IStakeNFT__factory>;
     getContractFactory(
+      name: "InstantLiquidityToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.InstantLiquidityToken__factory>;
+    getContractFactory(
+      name: "MetalFunFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MetalFunFactory__factory>;
+    getContractFactory(
+      name: "INonfungiblePositionManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.INonfungiblePositionManager__factory>;
+    getContractFactory(
+      name: "TokenFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TokenFactory__factory>;
+    getContractFactory(
       name: "PrizePool",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PrizePool__factory>;
@@ -120,6 +148,18 @@ declare module "hardhat/types/runtime" {
       name: "ProxypadDeployer",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ProxypadDeployer__factory>;
+    getContractFactory(
+      name: "Token",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Token__factory>;
+    getContractFactory(
+      name: "INonfungiblePositionManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.INonfungiblePositionManager__factory>;
+    getContractFactory(
+      name: "ProxypadDeployerLP",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ProxypadDeployerLP__factory>;
     getContractFactory(
       name: "Token",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -166,6 +206,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC721Errors>;
     getContractAt(
+      name: "Clones",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Clones>;
+    getContractAt(
       name: "ERC1155",
       address: string,
       signer?: ethers.Signer
@@ -210,6 +255,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC721>;
+    getContractAt(
+      name: "IERC721Receiver",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC721Receiver>;
+    getContractAt(
+      name: "ERC721Holder",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC721Holder>;
     getContractAt(
       name: "Address",
       address: string,
@@ -271,6 +326,26 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IStakeNFT>;
     getContractAt(
+      name: "InstantLiquidityToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.InstantLiquidityToken>;
+    getContractAt(
+      name: "MetalFunFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MetalFunFactory>;
+    getContractAt(
+      name: "INonfungiblePositionManager",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.INonfungiblePositionManager>;
+    getContractAt(
+      name: "TokenFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TokenFactory>;
+    getContractAt(
       name: "PrizePool",
       address: string,
       signer?: ethers.Signer
@@ -280,6 +355,21 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ProxypadDeployer>;
+    getContractAt(
+      name: "Token",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Token>;
+    getContractAt(
+      name: "INonfungiblePositionManager",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.INonfungiblePositionManager>;
+    getContractAt(
+      name: "ProxypadDeployerLP",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ProxypadDeployerLP>;
     getContractAt(
       name: "Token",
       address: string,
