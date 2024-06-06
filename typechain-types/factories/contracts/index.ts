@@ -2,7 +2,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as proxypadDeployerSol from "./ProxypadDeployer.sol";
+export * as proxypadDeployerLpSol from "./ProxypadDeployerLP.sol";
 export * as interfaces from "./interfaces";
+export * as metal from "./metal";
 export * as staking from "./staking";
 export * as utils from "./utils";
 export { CasterNFT__factory } from "./CasterNFT__factory";
