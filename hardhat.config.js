@@ -11,7 +11,14 @@ const COMPILER_SETTINGS = {
     optimizer: {
         enabled: true,
         runs: 200,
+        details: {
+            yul: true,
+            yulDetails: {
+                optimizerSteps: "dhfoDgvulfnTUtnIf",
+            },
+        },
     },
+    viaIR: true,
     metadata: {
         bytecodeHash: "none",
     },

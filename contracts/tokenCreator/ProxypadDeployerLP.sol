@@ -4,8 +4,7 @@ pragma solidity ^0.8.25;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface INonfungiblePositionManager is IERC721 {
     struct MintParams {
@@ -64,15 +63,14 @@ contract Token is ERC20 {
 }
 
 contract ProxypadDeployerLP {
-    // 2.5% tax
-    INonfungiblePositionManager nonfungiblePositionManager =
+    using SafeERC20 for IERC20;
+
+    INonfungiblePositionManager public immutable nonfungiblePositionManager =
         INonfungiblePositionManager(0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1);
+    address public immutable weth = 0x4200000000000000000000000000000000000006;
+    uint256 internal nonce = 0;
 
-    address internal weth = 0x4200000000000000000000000000000000000006;
-    uint24 internal POOL_FEE = 10000;
-    uint256 nonce = 0;
-
-    // Deployment
+    // Deployment event
     event NewToken(
         address indexed token,
         address indexed creator,
@@ -85,7 +83,10 @@ contract ProxypadDeployerLP {
         address token,
         uint256 _liquidity,
         uint256 _backingLiquidity,
-        address _owner
+        uint16 _fee,
+        int24 tickLower,
+        int24 tickUpper,
+        address owner
     )
         internal
         view
@@ -98,9 +99,11 @@ contract ProxypadDeployerLP {
         (address token0, address token1) = tokenIsLessThanWeth
             ? (token, weth)
             : (weth, token);
-        (int24 tickLower, int24 tickUpper) = tokenIsLessThanWeth
-            ? (int24(-220400), int24(0))
-            : (int24(0), int24(220400));
+
+        (int24 lowerTick, int24 upperTick) = tokenIsLessThanWeth
+            ? (tickLower, tickUpper)
+            : (tickUpper, tickLower);
+
         (uint256 amt0, uint256 amt1) = tokenIsLessThanWeth
             ? (_liquidity, _backingLiquidity)
             : (_backingLiquidity, _liquidity);
@@ -108,44 +111,40 @@ contract ProxypadDeployerLP {
         params = INonfungiblePositionManager.MintParams({
             token0: token0,
             token1: token1,
-            // 1% fee
-            fee: POOL_FEE,
-            tickLower: tickLower,
-            tickUpper: tickUpper,
+            fee: _fee,
+            tickLower: lowerTick,
+            tickUpper: upperTick,
             amount0Desired: amt0,
-            // allow for a bit of slippage
-            amount0Min: amt0 - ((amt0 * 5) / 100),
+            amount0Min: amt0 - ((amt0 * 5) / 1000),
             amount1Desired: amt1,
-            amount1Min: amt1 - ((amt1 * 5) / 100),
-            deadline: block.timestamp,
-            recipient: _owner
+            amount1Min: amt1 - ((amt1 * 5) / 1000),
+            recipient: owner,
+            deadline: block.timestamp
         });
 
         initialSqrtPrice = tokenIsLessThanWeth
             ? 1252685732681638336686364
             : 5010664478791732988152496286088527;
-
-        //  tokenIsLessThanWeth ? 2374716772012394972971008 : 2643305428826910585518143993544704;
     }
 
     function deploy(
-        string memory _name, // Token name
-        string memory _symbol, // Token symbol
-        uint256 _maxSupply, // Max supply of Token (50% will be locked for liquidity)
-        uint256 _liquidity, // Amount of liquidity to add
-        uint256 _backingLiquidity, // Amount of backing liquidity to add
+        string memory _name,
+        string memory _symbol,
+        uint256 _maxSupply,
+        uint256 _liquidity,
+        uint256 _backingLiquidity,
+        uint16 fee,
+        int24 upperTick,
+        int24 lowerTick,
         address owner
     ) external payable returns (address, uint256) {
-        uint256 taxAmount = (_maxSupply * 25) / 1000;
-
-        // 1. Create Token, approve to router
-        Token t = new Token(_name, _symbol, _maxSupply);
+        Token t = new Token{salt: keccak256(abi.encodePacked(nonce))}(
+            _name,
+            _symbol,
+            _maxSupply
+        );
 
         address token = address(t);
-
-        (address token0, address token1) = token < weth
-            ? (token, weth)
-            : (weth, token);
 
         t.approve(address(nonfungiblePositionManager), _liquidity);
         IERC20(weth).approve(
@@ -155,40 +154,32 @@ contract ProxypadDeployerLP {
 
         (
             INonfungiblePositionManager.MintParams memory mintParams,
-            uint160 initialSquareRootPrice
+            uint160 initialSqrtPrice
         ) = _getMintParams({
                 token: token,
                 _liquidity: _liquidity,
                 _backingLiquidity: _backingLiquidity,
-                _owner: owner
+                _fee: fee,
+                tickUpper: upperTick,
+                tickLower: lowerTick,
+                owner: owner
             });
 
         nonfungiblePositionManager.createAndInitializePoolIfNecessary({
-            token0: token0,
-            token1: token1,
-            fee: POOL_FEE,
-            sqrtPriceX96: initialSquareRootPrice
+            token0: mintParams.token0,
+            token1: mintParams.token1,
+            fee: fee,
+            sqrtPriceX96: initialSqrtPrice
         });
 
         (uint256 lpTokenId, , , ) = nonfungiblePositionManager.mint({
             params: mintParams
         });
 
-        // 3. Deployer keeps the rest
-        uint256 deployerAmount = _maxSupply - taxAmount;
-
-        if (deployerAmount > 0) {
-            t.transfer(msg.sender, deployerAmount);
-        }
+        nonce += 1;
 
         // emit NewToken(address(t), msg.sender, _name, _symbol, _maxSupply);
 
         return (token, lpTokenId);
-    }
-
-    function updateNFTManager(address _newNFTManager) external {
-        nonfungiblePositionManager = INonfungiblePositionManager(
-            _newNFTManager
-        );
     }
 }

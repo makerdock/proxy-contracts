@@ -61,9 +61,17 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC20Metadata__factory>;
     getContractFactory(
+      name: "IERC20Permit",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Permit__factory>;
+    getContractFactory(
       name: "IERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC20__factory>;
+    getContractFactory(
+      name: "SafeERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SafeERC20__factory>;
     getContractFactory(
       name: "IERC721",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -125,22 +133,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IStakeNFT__factory>;
     getContractFactory(
-      name: "InstantLiquidityToken",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.InstantLiquidityToken__factory>;
-    getContractFactory(
-      name: "MetalFunFactory",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MetalFunFactory__factory>;
-    getContractFactory(
-      name: "INonfungiblePositionManager",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.INonfungiblePositionManager__factory>;
-    getContractFactory(
-      name: "TokenFactory",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.TokenFactory__factory>;
-    getContractFactory(
       name: "PrizePool",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PrizePool__factory>;
@@ -148,18 +140,6 @@ declare module "hardhat/types/runtime" {
       name: "ProxypadDeployer",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ProxypadDeployer__factory>;
-    getContractFactory(
-      name: "Token",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Token__factory>;
-    getContractFactory(
-      name: "INonfungiblePositionManager",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.INonfungiblePositionManager__factory>;
-    getContractFactory(
-      name: "ProxypadDeployerLP",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ProxypadDeployerLP__factory>;
     getContractFactory(
       name: "Token",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -176,6 +156,18 @@ declare module "hardhat/types/runtime" {
       name: "Ticket",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Ticket__factory>;
+    getContractFactory(
+      name: "INonfungiblePositionManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.INonfungiblePositionManager__factory>;
+    getContractFactory(
+      name: "ProxypadDeployerLP",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ProxypadDeployerLP__factory>;
+    getContractFactory(
+      name: "Token",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Token__factory>;
     getContractFactory(
       name: "BackendGateway",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -246,10 +238,20 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC20Metadata>;
     getContractAt(
+      name: "IERC20Permit",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Permit>;
+    getContractAt(
       name: "IERC20",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC20>;
+    getContractAt(
+      name: "SafeERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SafeERC20>;
     getContractAt(
       name: "IERC721",
       address: string,
@@ -326,26 +328,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IStakeNFT>;
     getContractAt(
-      name: "InstantLiquidityToken",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.InstantLiquidityToken>;
-    getContractAt(
-      name: "MetalFunFactory",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.MetalFunFactory>;
-    getContractAt(
-      name: "INonfungiblePositionManager",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.INonfungiblePositionManager>;
-    getContractAt(
-      name: "TokenFactory",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.TokenFactory>;
-    getContractAt(
       name: "PrizePool",
       address: string,
       signer?: ethers.Signer
@@ -355,21 +337,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ProxypadDeployer>;
-    getContractAt(
-      name: "Token",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Token>;
-    getContractAt(
-      name: "INonfungiblePositionManager",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.INonfungiblePositionManager>;
-    getContractAt(
-      name: "ProxypadDeployerLP",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ProxypadDeployerLP>;
     getContractAt(
       name: "Token",
       address: string,
@@ -390,6 +357,21 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Ticket>;
+    getContractAt(
+      name: "INonfungiblePositionManager",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.INonfungiblePositionManager>;
+    getContractAt(
+      name: "ProxypadDeployerLP",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ProxypadDeployerLP>;
+    getContractAt(
+      name: "Token",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Token>;
     getContractAt(
       name: "BackendGateway",
       address: string,
