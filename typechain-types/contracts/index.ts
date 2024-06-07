@@ -3,14 +3,12 @@
 /* eslint-disable */
 import type * as proxypadDeployerSol from "./ProxypadDeployer.sol";
 export type { proxypadDeployerSol };
-import type * as proxypadDeployerLpSol from "./ProxypadDeployerLP.sol";
-export type { proxypadDeployerLpSol };
 import type * as interfaces from "./interfaces";
 export type { interfaces };
-import type * as metal from "./metal";
-export type { metal };
 import type * as staking from "./staking";
 export type { staking };
+import type * as tokenCreator from "./tokenCreator";
+export type { tokenCreator };
 import type * as utils from "./utils";
 export type { utils };
 export type { CasterNFT } from "./CasterNFT";
