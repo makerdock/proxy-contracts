@@ -121,6 +121,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Strings__factory>;
     getContractFactory(
+      name: "AirdropTokens",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AirdropTokens__factory>;
+    getContractFactory(
+      name: "ProxyAirdrop",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ProxyAirdrop__factory>;
+    getContractFactory(
       name: "CasterNFT",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CasterNFT__factory>;
@@ -316,6 +324,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Strings>;
+    getContractAt(
+      name: "AirdropTokens",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AirdropTokens>;
+    getContractAt(
+      name: "ProxyAirdrop",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ProxyAirdrop>;
     getContractAt(
       name: "CasterNFT",
       address: string,

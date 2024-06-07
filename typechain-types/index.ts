@@ -60,6 +60,10 @@ export type { ReentrancyGuard } from "./@openzeppelin/contracts/utils/Reentrancy
 export { ReentrancyGuard__factory } from "./factories/@openzeppelin/contracts/utils/ReentrancyGuard__factory";
 export type { Strings } from "./@openzeppelin/contracts/utils/Strings";
 export { Strings__factory } from "./factories/@openzeppelin/contracts/utils/Strings__factory";
+export type { AirdropTokens } from "./contracts/airdrop/ProxyAirdrop.sol/AirdropTokens";
+export { AirdropTokens__factory } from "./factories/contracts/airdrop/ProxyAirdrop.sol/AirdropTokens__factory";
+export type { ProxyAirdrop } from "./contracts/airdrop/ProxyAirdrop.sol/ProxyAirdrop";
+export { ProxyAirdrop__factory } from "./factories/contracts/airdrop/ProxyAirdrop.sol/ProxyAirdrop__factory";
 export type { CasterNFT } from "./contracts/CasterNFT";
 export { CasterNFT__factory } from "./factories/contracts/CasterNFT__factory";
 export type { IRoyaltyContract } from "./contracts/interfaces/IRoyaltyContract";
