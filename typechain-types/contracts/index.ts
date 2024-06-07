@@ -3,6 +3,8 @@
 /* eslint-disable */
 import type * as proxypadDeployerSol from "./ProxypadDeployer.sol";
 export type { proxypadDeployerSol };
+import type * as testContractSol from "./TestContract.sol";
+export type { testContractSol };
 import type * as interfaces from "./interfaces";
 export type { interfaces };
 import type * as staking from "./staking";
