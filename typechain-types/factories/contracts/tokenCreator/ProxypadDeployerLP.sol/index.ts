@@ -2,5 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export { INonfungiblePositionManager__factory } from "./INonfungiblePositionManager__factory";
+export { IUniswapV3Pool__factory } from "./IUniswapV3Pool__factory";
 export { ProxypadDeployerLP__factory } from "./ProxypadDeployerLP__factory";
 export { Token__factory } from "./Token__factory";

@@ -54,6 +54,18 @@ interface INonfungiblePositionManager is IERC721 {
     ) external payable returns (uint256 amount0, uint256 amount1);
 }
 
+interface IUniswapV3Pool {
+    function initialize(uint160 sqrtPriceX96) external;
+
+    function createPool(
+        address tokenA,
+        address tokenB,
+        uint24 fee
+    ) external returns (address pool);
+
+    function feeAmountTickSpacing(uint24 fee) external view returns (int24);
+}
+
 contract Token is ERC20 {
     constructor(
         string memory _name,
@@ -71,8 +83,9 @@ contract ProxypadDeployerLP {
 
     INonfungiblePositionManager public immutable nonfungiblePositionManager =
         INonfungiblePositionManager(0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1);
+    IUniswapV3Pool public immutable uniswapV3Factory =
+        IUniswapV3Pool(0x33128a8fC17869897dcE68Ed026d694621f6FDfD);
     address public immutable weth = 0x4200000000000000000000000000000000000006;
-    uint256 internal nonce = 0;
 
     // Deployment event
     event NewToken(
@@ -83,119 +96,70 @@ contract ProxypadDeployerLP {
         uint256 maxSupply
     );
 
-    function _getMintParams(
-        address token,
-        uint256 _liquidity,
-        uint256 _backingLiquidity,
-        uint24 _fee,
-        int24 tickLower,
-        int24 tickUpper,
-        address owner
-    )
-        internal
-        view
-        returns (
-            INonfungiblePositionManager.MintParams memory params,
-            uint160 initialSqrtPrice
-        )
-    {
-        bool tokenIsLessThanWeth = token < weth;
-        (address token0, address token1) = tokenIsLessThanWeth
-            ? (token, weth)
-            : (weth, token);
-
-        (int24 lowerTick, int24 upperTick) = tokenIsLessThanWeth
-            ? (tickLower, tickUpper)
-            : (tickUpper, tickLower);
-
-        (uint256 amt0, uint256 amt1) = tokenIsLessThanWeth
-            ? (_liquidity, _backingLiquidity)
-            : (_backingLiquidity, _liquidity);
-
-        params = INonfungiblePositionManager.MintParams({
-            token0: token0,
-            token1: token1,
-            fee: _fee,
-            tickLower: lowerTick,
-            tickUpper: upperTick,
-            amount0Desired: amt0,
-            amount0Min: amt0 - ((amt0 * 5) / 1000),
-            amount1Desired: amt1,
-            amount1Min: amt1 - ((amt1 * 5) / 1000),
-            recipient: owner,
-            deadline: block.timestamp
-        });
-
-        initialSqrtPrice = tokenIsLessThanWeth
-            ? 1252685732681638336686364
-            : 5010664478791732988152496286088527;
-    }
-
     function deploy(
         string memory _name,
         string memory _symbol,
         uint256 _maxSupply,
         uint256 _liquidity,
-        uint256 _backingLiquidity,
-        uint24 fee,
-        int24 initialSqrtPrice,
-        bytes32 salt,
-        address owner
+        uint24 _fee,
+        int24 _initialSqrtPrice,
+        bytes32 _salt,
+        address _owner
     ) external payable returns (address, uint256) {
-        Token t = new Token{
-            salt: keccak256(abi.encodePacked(msg.sender, salt))
-        }(_name, _symbol, _maxSupply);
-
-        address token = address(t);
-
-        t.approve(address(nonfungiblePositionManager), _liquidity);
-        IERC20(weth).approve(
-            address(nonfungiblePositionManager),
-            _backingLiquidity
+        // validate initialTick
+        int24 tickSpacing = uniswapV3Factory.feeAmountTickSpacing(_fee);
+        require(
+            tickSpacing != 0 && _initialSqrtPrice % tickSpacing == 0,
+            "TICK"
         );
 
-        // (
-        //     INonfungiblePositionManager.MintParams memory mintParams,
-        //     uint160 initialSqrtPrice
-        // ) = _getMintParams({
-        //         token: token,
-        //         _liquidity: _liquidity,
-        //         _backingLiquidity: _backingLiquidity,
-        //         _fee: fee,
-        //         tickUpper: upperTick,
-        //         tickLower: lowerTick,
-        //         owner: owner
-        //     });
+        // deploy token
+        // force token to be token0 of the Uniswap pool to simplify logic
+        // frontend will need to ensure the salt is unique and results in token address < WETH
+        Token token = new Token{salt: keccak256(abi.encode(msg.sender, _salt))}(
+            _name,
+            _symbol,
+            _maxSupply
+        );
 
-        nonfungiblePositionManager.createAndInitializePoolIfNecessary({
-            token0: token,
-            token1: weth,
-            fee: fee,
-            sqrtPriceX96: initialSqrtPrice.getSqrtRatioAtTick()
-        });
+        require(address(token) < weth, "SALT");
 
+        // transfer ownerSupply to supplyOwner
+        uint256 ownerSupply = _maxSupply - _liquidity;
+        token.transfer(_owner, ownerSupply);
+
+        // create Uniswap v3 pool for token/WETH pair
+        {
+            uint160 sqrtPriceX96 = _initialSqrtPrice.getSqrtRatioAtTick();
+            address pool = uniswapV3Factory.createPool(
+                address(token),
+                weth,
+                _fee
+            );
+            IUniswapV3Pool(pool).initialize(sqrtPriceX96);
+        }
+
+        // use remaining tokens to mint liquidity
         INonfungiblePositionManager.MintParams
             memory params = INonfungiblePositionManager.MintParams(
-                token,
+                address(token),
                 weth,
-                fee,
-                initialSqrtPrice,
-                maxUsableTick(initialSqrtPrice),
+                _fee,
+                _initialSqrtPrice,
+                maxUsableTick(tickSpacing),
                 _liquidity,
-                _liquidity - ((_liquidity * 5) / 1000),
-                _backingLiquidity,
-                _backingLiquidity - ((_backingLiquidity * 5) / 1000),
-                owner,
+                0,
+                0,
+                0,
+                _owner,
                 block.timestamp
             );
-
+        token.approve(address(nonfungiblePositionManager), _liquidity);
         (uint256 lpTokenId, , , ) = nonfungiblePositionManager.mint(params);
 
-        nonce += 1;
+        // emit NewToken(address(token), msg.sender, _name, _symbol, _maxSupply);
 
-        // emit NewToken(address(t), msg.sender, _name, _symbol, _maxSupply);
-
-        return (token, lpTokenId);
+        return (address(token), lpTokenId);
     }
 
     function predictBasecamp(

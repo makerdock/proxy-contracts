@@ -28,7 +28,7 @@ const FORKING_BLOCK_NUMBER = parseInt(process.env.FORKING_BLOCK_NUMBER) || 0
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "Your etherscan API key"
 const REPORT_GAS = process.env.REPORT_GAS || false
 
-const BASE = "https://base-pokt.nodies.app"
+const BASE = "https://1rpc.io/base"
 const BASE_SEPOLIA_ETH_BROWSER = "https://sepolia.basescan.org/"
 const BASE_SEPOLIA_ETH = "https://base-sepolia.blockpi.network/v1/rpc/public"
 /** @type import('hardhat/config').HardhatUserConfig */

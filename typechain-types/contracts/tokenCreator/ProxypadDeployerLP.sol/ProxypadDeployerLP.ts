@@ -29,11 +29,12 @@ import type {
 
 export interface ProxypadDeployerLPInterface extends utils.Interface {
   functions: {
-    "deploy(string,string,uint256,uint256,uint256,uint24,int24,bytes32,address)": FunctionFragment;
+    "deploy(string,string,uint256,uint24,int24,bytes32,address)": FunctionFragment;
     "generateSalt(address,string,string,uint256)": FunctionFragment;
     "maxUsableTick(int24)": FunctionFragment;
     "nonfungiblePositionManager()": FunctionFragment;
     "predictBasecamp(address,string,string,uint256,bytes32)": FunctionFragment;
+    "uniswapV3Factory()": FunctionFragment;
     "weth()": FunctionFragment;
   };
 
@@ -44,6 +45,7 @@ export interface ProxypadDeployerLPInterface extends utils.Interface {
       | "maxUsableTick"
       | "nonfungiblePositionManager"
       | "predictBasecamp"
+      | "uniswapV3Factory"
       | "weth"
   ): FunctionFragment;
 
@@ -52,8 +54,6 @@ export interface ProxypadDeployerLPInterface extends utils.Interface {
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
-      PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
@@ -88,6 +88,10 @@ export interface ProxypadDeployerLPInterface extends utils.Interface {
       PromiseOrValue<BytesLike>
     ]
   ): string;
+  encodeFunctionData(
+    functionFragment: "uniswapV3Factory",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "weth", values?: undefined): string;
 
   decodeFunctionResult(functionFragment: "deploy", data: BytesLike): Result;
@@ -105,6 +109,10 @@ export interface ProxypadDeployerLPInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "predictBasecamp",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "uniswapV3Factory",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "weth", data: BytesLike): Result;
@@ -161,8 +169,6 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      _liquidity: PromiseOrValue<BigNumberish>,
-      _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
       initialSqrtPrice: PromiseOrValue<BigNumberish>,
       salt: PromiseOrValue<BytesLike>,
@@ -194,6 +200,8 @@ export interface ProxypadDeployerLP extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[string] & { result: string }>;
 
+    uniswapV3Factory(overrides?: CallOverrides): Promise<[string]>;
+
     weth(overrides?: CallOverrides): Promise<[string]>;
   };
 
@@ -201,8 +209,6 @@ export interface ProxypadDeployerLP extends BaseContract {
     _name: PromiseOrValue<string>,
     _symbol: PromiseOrValue<string>,
     _maxSupply: PromiseOrValue<BigNumberish>,
-    _liquidity: PromiseOrValue<BigNumberish>,
-    _backingLiquidity: PromiseOrValue<BigNumberish>,
     fee: PromiseOrValue<BigNumberish>,
     initialSqrtPrice: PromiseOrValue<BigNumberish>,
     salt: PromiseOrValue<BytesLike>,
@@ -234,6 +240,8 @@ export interface ProxypadDeployerLP extends BaseContract {
     overrides?: CallOverrides
   ): Promise<string>;
 
+  uniswapV3Factory(overrides?: CallOverrides): Promise<string>;
+
   weth(overrides?: CallOverrides): Promise<string>;
 
   callStatic: {
@@ -241,8 +249,6 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      _liquidity: PromiseOrValue<BigNumberish>,
-      _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
       initialSqrtPrice: PromiseOrValue<BigNumberish>,
       salt: PromiseOrValue<BytesLike>,
@@ -274,6 +280,8 @@ export interface ProxypadDeployerLP extends BaseContract {
       overrides?: CallOverrides
     ): Promise<string>;
 
+    uniswapV3Factory(overrides?: CallOverrides): Promise<string>;
+
     weth(overrides?: CallOverrides): Promise<string>;
   };
 
@@ -299,8 +307,6 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      _liquidity: PromiseOrValue<BigNumberish>,
-      _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
       initialSqrtPrice: PromiseOrValue<BigNumberish>,
       salt: PromiseOrValue<BytesLike>,
@@ -332,6 +338,8 @@ export interface ProxypadDeployerLP extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    uniswapV3Factory(overrides?: CallOverrides): Promise<BigNumber>;
+
     weth(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
@@ -340,8 +348,6 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      _liquidity: PromiseOrValue<BigNumberish>,
-      _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
       initialSqrtPrice: PromiseOrValue<BigNumberish>,
       salt: PromiseOrValue<BytesLike>,
@@ -374,6 +380,8 @@ export interface ProxypadDeployerLP extends BaseContract {
       salt: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    uniswapV3Factory(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     weth(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };

@@ -2,7 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as proxypadDeployerSol from "./ProxypadDeployer.sol";
-export * as testContractSol from "./TestContract.sol";
 export * as interfaces from "./interfaces";
 export * as staking from "./staking";
 export * as tokenCreator from "./tokenCreator";
