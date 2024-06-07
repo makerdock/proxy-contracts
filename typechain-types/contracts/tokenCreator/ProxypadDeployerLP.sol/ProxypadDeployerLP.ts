@@ -29,7 +29,7 @@ import type {
 
 export interface ProxypadDeployerLPInterface extends utils.Interface {
   functions: {
-    "deploy(string,string,uint256,uint24,int24,bytes32,address)": FunctionFragment;
+    "deploy(string,string,uint256,uint256,uint24,int24,bytes32,address)": FunctionFragment;
     "generateSalt(address,string,string,uint256)": FunctionFragment;
     "maxUsableTick(int24)": FunctionFragment;
     "nonfungiblePositionManager()": FunctionFragment;
@@ -54,6 +54,7 @@ export interface ProxypadDeployerLPInterface extends utils.Interface {
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
@@ -169,10 +170,11 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      fee: PromiseOrValue<BigNumberish>,
-      initialSqrtPrice: PromiseOrValue<BigNumberish>,
-      salt: PromiseOrValue<BytesLike>,
-      owner: PromiseOrValue<string>,
+      _liquidity: PromiseOrValue<BigNumberish>,
+      _fee: PromiseOrValue<BigNumberish>,
+      _initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      _salt: PromiseOrValue<BytesLike>,
+      _owner: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -209,10 +211,11 @@ export interface ProxypadDeployerLP extends BaseContract {
     _name: PromiseOrValue<string>,
     _symbol: PromiseOrValue<string>,
     _maxSupply: PromiseOrValue<BigNumberish>,
-    fee: PromiseOrValue<BigNumberish>,
-    initialSqrtPrice: PromiseOrValue<BigNumberish>,
-    salt: PromiseOrValue<BytesLike>,
-    owner: PromiseOrValue<string>,
+    _liquidity: PromiseOrValue<BigNumberish>,
+    _fee: PromiseOrValue<BigNumberish>,
+    _initialSqrtPrice: PromiseOrValue<BigNumberish>,
+    _salt: PromiseOrValue<BytesLike>,
+    _owner: PromiseOrValue<string>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -249,10 +252,11 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      fee: PromiseOrValue<BigNumberish>,
-      initialSqrtPrice: PromiseOrValue<BigNumberish>,
-      salt: PromiseOrValue<BytesLike>,
-      owner: PromiseOrValue<string>,
+      _liquidity: PromiseOrValue<BigNumberish>,
+      _fee: PromiseOrValue<BigNumberish>,
+      _initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      _salt: PromiseOrValue<BytesLike>,
+      _owner: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<[string, BigNumber]>;
 
@@ -307,10 +311,11 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      fee: PromiseOrValue<BigNumberish>,
-      initialSqrtPrice: PromiseOrValue<BigNumberish>,
-      salt: PromiseOrValue<BytesLike>,
-      owner: PromiseOrValue<string>,
+      _liquidity: PromiseOrValue<BigNumberish>,
+      _fee: PromiseOrValue<BigNumberish>,
+      _initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      _salt: PromiseOrValue<BytesLike>,
+      _owner: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -348,10 +353,11 @@ export interface ProxypadDeployerLP extends BaseContract {
       _name: PromiseOrValue<string>,
       _symbol: PromiseOrValue<string>,
       _maxSupply: PromiseOrValue<BigNumberish>,
-      fee: PromiseOrValue<BigNumberish>,
-      initialSqrtPrice: PromiseOrValue<BigNumberish>,
-      salt: PromiseOrValue<BytesLike>,
-      owner: PromiseOrValue<string>,
+      _liquidity: PromiseOrValue<BigNumberish>,
+      _fee: PromiseOrValue<BigNumberish>,
+      _initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      _salt: PromiseOrValue<BytesLike>,
+      _owner: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
