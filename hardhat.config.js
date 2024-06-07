@@ -11,12 +11,6 @@ const COMPILER_SETTINGS = {
     optimizer: {
         enabled: true,
         runs: 200,
-        details: {
-            yul: true,
-            yulDetails: {
-                optimizerSteps: "dhfoDgvulfnTUtnIf",
-            },
-        },
     },
     viaIR: true,
     metadata: {
@@ -40,12 +34,14 @@ const BASE_SEPOLIA_ETH = "https://base-sepolia.blockpi.network/v1/rpc/public"
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
     solidity: {
-        compilers: [
-            {
-                version: "0.8.25",
-                COMPILER_SETTINGS,
-            },
-        ],
+        version: "0.8.25",
+        ...COMPILER_SETTINGS,
+        // compilers: [
+        //     {
+        //         version: "0.8.25",
+        //         COMPILER_SETTINGS,
+        //     },
+        // ],
     },
     allowUnlimitedContractSize: true,
     networks: {

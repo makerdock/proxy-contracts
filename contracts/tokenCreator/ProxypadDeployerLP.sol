@@ -5,6 +5,8 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Bytes32AddressLib} from "./Bytes32AddressLib.sol";
+import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
 interface INonfungiblePositionManager is IERC721 {
     struct MintParams {
@@ -64,6 +66,8 @@ contract Token is ERC20 {
 
 contract ProxypadDeployerLP {
     using SafeERC20 for IERC20;
+    using Bytes32AddressLib for *;
+    using TickMath for *;
 
     INonfungiblePositionManager public immutable nonfungiblePositionManager =
         INonfungiblePositionManager(0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1);
@@ -83,7 +87,7 @@ contract ProxypadDeployerLP {
         address token,
         uint256 _liquidity,
         uint256 _backingLiquidity,
-        uint16 _fee,
+        uint24 _fee,
         int24 tickLower,
         int24 tickUpper,
         address owner
@@ -133,16 +137,14 @@ contract ProxypadDeployerLP {
         uint256 _maxSupply,
         uint256 _liquidity,
         uint256 _backingLiquidity,
-        uint16 fee,
-        int24 upperTick,
-        int24 lowerTick,
+        uint24 fee,
+        int24 initialSqrtPrice,
+        bytes32 salt,
         address owner
     ) external payable returns (address, uint256) {
-        Token t = new Token{salt: keccak256(abi.encodePacked(nonce))}(
-            _name,
-            _symbol,
-            _maxSupply
-        );
+        Token t = new Token{
+            salt: keccak256(abi.encodePacked(msg.sender, salt))
+        }(_name, _symbol, _maxSupply);
 
         address token = address(t);
 
@@ -152,34 +154,91 @@ contract ProxypadDeployerLP {
             _backingLiquidity
         );
 
-        (
-            INonfungiblePositionManager.MintParams memory mintParams,
-            uint160 initialSqrtPrice
-        ) = _getMintParams({
-                token: token,
-                _liquidity: _liquidity,
-                _backingLiquidity: _backingLiquidity,
-                _fee: fee,
-                tickUpper: upperTick,
-                tickLower: lowerTick,
-                owner: owner
-            });
+        // (
+        //     INonfungiblePositionManager.MintParams memory mintParams,
+        //     uint160 initialSqrtPrice
+        // ) = _getMintParams({
+        //         token: token,
+        //         _liquidity: _liquidity,
+        //         _backingLiquidity: _backingLiquidity,
+        //         _fee: fee,
+        //         tickUpper: upperTick,
+        //         tickLower: lowerTick,
+        //         owner: owner
+        //     });
 
         nonfungiblePositionManager.createAndInitializePoolIfNecessary({
-            token0: mintParams.token0,
-            token1: mintParams.token1,
+            token0: token,
+            token1: weth,
             fee: fee,
-            sqrtPriceX96: initialSqrtPrice
+            sqrtPriceX96: initialSqrtPrice.getSqrtRatioAtTick()
         });
 
-        (uint256 lpTokenId, , , ) = nonfungiblePositionManager.mint({
-            params: mintParams
-        });
+        INonfungiblePositionManager.MintParams
+            memory params = INonfungiblePositionManager.MintParams(
+                token,
+                weth,
+                fee,
+                initialSqrtPrice,
+                maxUsableTick(initialSqrtPrice),
+                _liquidity,
+                _liquidity - ((_liquidity * 5) / 1000),
+                _backingLiquidity,
+                _backingLiquidity - ((_backingLiquidity * 5) / 1000),
+                owner,
+                block.timestamp
+            );
+
+        (uint256 lpTokenId, , , ) = nonfungiblePositionManager.mint(params);
 
         nonce += 1;
 
         // emit NewToken(address(t), msg.sender, _name, _symbol, _maxSupply);
 
         return (token, lpTokenId);
+    }
+
+    function predictBasecamp(
+        address deployer,
+        string calldata name,
+        string calldata symbol,
+        uint256 supply,
+        bytes32 salt
+    ) public view returns (address result) {
+        bytes32 create2Salt = keccak256(abi.encode(deployer, salt));
+        result = keccak256(
+            abi.encodePacked(
+                bytes1(0xFF),
+                address(this),
+                create2Salt,
+                keccak256(
+                    bytes.concat(
+                        type(Token).creationCode,
+                        abi.encode(name, symbol, supply)
+                    )
+                )
+            )
+        ).fromLast20Bytes();
+    }
+
+    function generateSalt(
+        address deployer,
+        string calldata name,
+        string calldata symbol,
+        uint256 supply
+    ) external view returns (bytes32 salt, address token) {
+        for (uint256 i; ; i++) {
+            salt = bytes32(i);
+            token = predictBasecamp(deployer, name, symbol, supply, salt);
+            if (token < weth && token.code.length == 0) {
+                break;
+            }
+        }
+    }
+
+    function maxUsableTick(int24 tickSpacing) public pure returns (int24) {
+        unchecked {
+            return (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
+        }
     }
 }

@@ -17,6 +17,9 @@ importers:
       '@prb/math':
         specifier: ^4.0.2
         version: 4.0.2
+      '@uniswap/v3-core':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@uniswap/v3-periphery':
         specifier: ^1.4.4
         version: 1.4.4

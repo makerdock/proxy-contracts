@@ -29,13 +29,22 @@ import type {
 
 export interface ProxypadDeployerLPInterface extends utils.Interface {
   functions: {
-    "deploy(string,string,uint256,uint256,uint256,uint16,int24,int24,address)": FunctionFragment;
+    "deploy(string,string,uint256,uint256,uint256,uint24,int24,bytes32,address)": FunctionFragment;
+    "generateSalt(address,string,string,uint256)": FunctionFragment;
+    "maxUsableTick(int24)": FunctionFragment;
     "nonfungiblePositionManager()": FunctionFragment;
+    "predictBasecamp(address,string,string,uint256,bytes32)": FunctionFragment;
     "weth()": FunctionFragment;
   };
 
   getFunction(
-    nameOrSignatureOrTopic: "deploy" | "nonfungiblePositionManager" | "weth"
+    nameOrSignatureOrTopic:
+      | "deploy"
+      | "generateSalt"
+      | "maxUsableTick"
+      | "nonfungiblePositionManager"
+      | "predictBasecamp"
+      | "weth"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -48,19 +57,54 @@ export interface ProxypadDeployerLPInterface extends utils.Interface {
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>,
+      PromiseOrValue<BytesLike>,
       PromiseOrValue<string>
     ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "generateSalt",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "maxUsableTick",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "nonfungiblePositionManager",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "predictBasecamp",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
+      PromiseOrValue<BigNumberish>,
+      PromiseOrValue<BytesLike>
+    ]
+  ): string;
   encodeFunctionData(functionFragment: "weth", values?: undefined): string;
 
   decodeFunctionResult(functionFragment: "deploy", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "generateSalt",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "maxUsableTick",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "nonfungiblePositionManager",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "predictBasecamp",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "weth", data: BytesLike): Result;
@@ -120,13 +164,35 @@ export interface ProxypadDeployerLP extends BaseContract {
       _liquidity: PromiseOrValue<BigNumberish>,
       _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
-      upperTick: PromiseOrValue<BigNumberish>,
-      lowerTick: PromiseOrValue<BigNumberish>,
+      initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
       owner: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    generateSalt(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[string, string] & { salt: string; token: string }>;
+
+    maxUsableTick(
+      tickSpacing: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[number]>;
+
     nonfungiblePositionManager(overrides?: CallOverrides): Promise<[string]>;
+
+    predictBasecamp(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<[string] & { result: string }>;
 
     weth(overrides?: CallOverrides): Promise<[string]>;
   };
@@ -138,13 +204,35 @@ export interface ProxypadDeployerLP extends BaseContract {
     _liquidity: PromiseOrValue<BigNumberish>,
     _backingLiquidity: PromiseOrValue<BigNumberish>,
     fee: PromiseOrValue<BigNumberish>,
-    upperTick: PromiseOrValue<BigNumberish>,
-    lowerTick: PromiseOrValue<BigNumberish>,
+    initialSqrtPrice: PromiseOrValue<BigNumberish>,
+    salt: PromiseOrValue<BytesLike>,
     owner: PromiseOrValue<string>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  generateSalt(
+    deployer: PromiseOrValue<string>,
+    name: PromiseOrValue<string>,
+    symbol: PromiseOrValue<string>,
+    supply: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<[string, string] & { salt: string; token: string }>;
+
+  maxUsableTick(
+    tickSpacing: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<number>;
+
   nonfungiblePositionManager(overrides?: CallOverrides): Promise<string>;
+
+  predictBasecamp(
+    deployer: PromiseOrValue<string>,
+    name: PromiseOrValue<string>,
+    symbol: PromiseOrValue<string>,
+    supply: PromiseOrValue<BigNumberish>,
+    salt: PromiseOrValue<BytesLike>,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   weth(overrides?: CallOverrides): Promise<string>;
 
@@ -156,13 +244,35 @@ export interface ProxypadDeployerLP extends BaseContract {
       _liquidity: PromiseOrValue<BigNumberish>,
       _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
-      upperTick: PromiseOrValue<BigNumberish>,
-      lowerTick: PromiseOrValue<BigNumberish>,
+      initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
       owner: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<[string, BigNumber]>;
 
+    generateSalt(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[string, string] & { salt: string; token: string }>;
+
+    maxUsableTick(
+      tickSpacing: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<number>;
+
     nonfungiblePositionManager(overrides?: CallOverrides): Promise<string>;
+
+    predictBasecamp(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     weth(overrides?: CallOverrides): Promise<string>;
   };
@@ -192,13 +302,35 @@ export interface ProxypadDeployerLP extends BaseContract {
       _liquidity: PromiseOrValue<BigNumberish>,
       _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
-      upperTick: PromiseOrValue<BigNumberish>,
-      lowerTick: PromiseOrValue<BigNumberish>,
+      initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
       owner: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    generateSalt(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    maxUsableTick(
+      tickSpacing: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     nonfungiblePositionManager(overrides?: CallOverrides): Promise<BigNumber>;
+
+    predictBasecamp(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     weth(overrides?: CallOverrides): Promise<BigNumber>;
   };
@@ -211,13 +343,35 @@ export interface ProxypadDeployerLP extends BaseContract {
       _liquidity: PromiseOrValue<BigNumberish>,
       _backingLiquidity: PromiseOrValue<BigNumberish>,
       fee: PromiseOrValue<BigNumberish>,
-      upperTick: PromiseOrValue<BigNumberish>,
-      lowerTick: PromiseOrValue<BigNumberish>,
+      initialSqrtPrice: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
       owner: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    generateSalt(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    maxUsableTick(
+      tickSpacing: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     nonfungiblePositionManager(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    predictBasecamp(
+      deployer: PromiseOrValue<string>,
+      name: PromiseOrValue<string>,
+      symbol: PromiseOrValue<string>,
+      supply: PromiseOrValue<BigNumberish>,
+      salt: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
