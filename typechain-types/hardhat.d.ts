@@ -153,18 +153,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.StakeNFT__factory>;
     getContractFactory(
-      name: "INonfungiblePositionManager",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.INonfungiblePositionManager__factory>;
-    getContractFactory(
-      name: "ProxypadDeployerLPTest",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ProxypadDeployerLPTest__factory>;
-    getContractFactory(
-      name: "Token",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Token__factory>;
-    getContractFactory(
       name: "Ticket",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Ticket__factory>;
@@ -172,6 +160,10 @@ declare module "hardhat/types/runtime" {
       name: "INonfungiblePositionManager",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.INonfungiblePositionManager__factory>;
+    getContractFactory(
+      name: "IUniswapV3Pool",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV3Pool__factory>;
     getContractFactory(
       name: "ProxypadDeployerLP",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -365,21 +357,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.StakeNFT>;
     getContractAt(
-      name: "INonfungiblePositionManager",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.INonfungiblePositionManager>;
-    getContractAt(
-      name: "ProxypadDeployerLPTest",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ProxypadDeployerLPTest>;
-    getContractAt(
-      name: "Token",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Token>;
-    getContractAt(
       name: "Ticket",
       address: string,
       signer?: ethers.Signer
@@ -389,6 +366,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.INonfungiblePositionManager>;
+    getContractAt(
+      name: "IUniswapV3Pool",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV3Pool>;
     getContractAt(
       name: "ProxypadDeployerLP",
       address: string,

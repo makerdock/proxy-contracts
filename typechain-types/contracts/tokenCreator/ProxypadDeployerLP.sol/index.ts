@@ -2,5 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { INonfungiblePositionManager } from "./INonfungiblePositionManager";
+export type { IUniswapV3Pool } from "./IUniswapV3Pool";
 export type { ProxypadDeployerLP } from "./ProxypadDeployerLP";
 export type { Token } from "./Token";
