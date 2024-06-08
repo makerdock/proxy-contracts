@@ -5,6 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {Bytes32AddressLib} from "./Bytes32AddressLib.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
@@ -67,12 +68,39 @@ interface IUniswapV3Factory {
 }
 
 contract Token is ERC20 {
+    bytes32 private rootHash;
+
+    mapping(address => bool) public isClaimed;
+
     constructor(
         string memory _name,
         string memory _symbol,
         uint256 _maxSupply
-    ) ERC20(_name, _symbol) {
+    )
+        // bytes32 _rootHash
+        ERC20(_name, _symbol)
+    {
         _mint(msg.sender, _maxSupply); // Mint to msg.sender (TokenDeployer)
+        // rootHash = _rootHash;
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return 18;
+    }
+
+    function claimTokens(
+        uint256 _claimAmount,
+        bytes32[] calldata proof
+    ) public {
+        if (isClaimed[msg.sender] == true) {
+            revert("User already claimed tokens");
+        }
+
+        bytes32 leaf = keccak256(
+            bytes.concat(keccak256(abi.encode(msg.sender, _claimAmount)))
+        );
+        require(MerkleProof.verify(proof, rootHash, leaf), "Invalid proof");
+        IERC20(address(this)).transfer(msg.sender, _claimAmount);
     }
 }
 
@@ -83,10 +111,18 @@ contract ProxypadDeployerLP {
     uint256 internal constant OWNER_SUPPLY_DENOM = 20; // 1/20 = 5%
     uint256 internal constant Q96 = 1 << 96;
 
+    // wDEGEN: 0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387
+    // wETH:   0x4200000000000000000000000000000000000006
     address public WETH = 0x4200000000000000000000000000000000000006;
     address public liquidityLocker;
+
+    // degen: 0x652e3Dc407e951BD0aFcB0697B911e81F0dDC876
+    // base:  0x33128a8fC17869897dcE68Ed026d694621f6FDfD
     IUniswapV3Factory public uniswapV3Factory =
         IUniswapV3Factory(0x33128a8fC17869897dcE68Ed026d694621f6FDfD);
+
+    // degen: 0x56c65e35f2Dd06f659BCFe327C4D7F21c9b69C2f
+    // base:  0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1
     INonfungiblePositionManager public positionManager =
         INonfungiblePositionManager(0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1);
 
@@ -114,11 +150,18 @@ contract ProxypadDeployerLP {
         uint256 supply,
         address supplyOwner,
         uint256 initialLiquidity,
-        uint256 distribution,
+        // uint256 distribution,
         int24 initialTick,
         uint24 fee,
         bytes32 salt
-    ) external returns (Token token, uint256 tokenId) {
+    )
+        external
+        returns (
+            // bytes32 rootHash
+            Token token,
+            uint256 tokenId
+        )
+    {
         // validate initialTick
         int24 tickSpacing = uniswapV3Factory.feeAmountTickSpacing(fee);
         require(tickSpacing != 0 && initialTick % tickSpacing == 0, "TICK");
@@ -133,15 +176,15 @@ contract ProxypadDeployerLP {
         );
         require(address(token) < WETH, "SALT");
 
-        require(supply >= distribution + initialLiquidity, "MAX_SUPPLY");
+        // require(supply >= distribution + initialLiquidity, "MAX_SUPPLY");
 
         // transfer ownerSupply to supplyOwner
-        uint256 ownerSupply = supply - distribution - initialLiquidity;
+        uint256 ownerSupply = supply - initialLiquidity;
         token.transfer(supplyOwner, ownerSupply);
 
-        if (distribution > 0) {
-            token.transfer(address(token), distribution);
-        }
+        // if (distribution > 0) {
+        //     token.transfer(address(token), distribution);
+        // }
 
         // create Uniswap v3 pool for token/WETH pair
         {
@@ -184,23 +227,6 @@ contract ProxypadDeployerLP {
         tokenIdOf[token] = tokenId;
 
         emit BasecampCreated(address(token), tokenId, msg.sender);
-    }
-
-    /// @notice Query deployments at indices [startIdx, endIdx)
-    function queryDeployments(
-        uint256 startIdx,
-        uint256 endIdx
-    ) external view returns (Deployment[] memory) {
-        require(startIdx < endIdx && endIdx <= deployments.length, "INDEX");
-        Deployment[] memory result = new Deployment[](endIdx - startIdx);
-        for (uint256 i = startIdx; i < endIdx; i++) {
-            result[i - startIdx] = deployments[i];
-        }
-        return result;
-    }
-
-    function numDeployments() external view returns (uint256) {
-        return deployments.length;
     }
 
     function predictBasecamp(
