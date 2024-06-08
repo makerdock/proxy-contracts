@@ -32,12 +32,28 @@ contract ProxyAirdrop is Ownable {
     event AirdropDeployed(
         address indexed tokenAddress,
         address indexed deployer,
-        address indexed collectionAddress
+        address indexed collectionAddress,
+        uint256 totalAirdropTokens
     );
 
-    function deployAirdrop(address tokenAddress, bytes32 _rootHash) public {
+    function deployAirdrop(
+        address tokenAddress,
+        bytes32 _rootHash,
+        uint256 _totalAirdropTokens
+    ) public {
         AirdropTokens airdrop = new AirdropTokens(tokenAddress, _rootHash);
 
-        emit AirdropDeployed(tokenAddress, msg.sender, address(airdrop));
+        IERC20(tokenAddress).transferFrom(
+            msg.sender,
+            address(airdrop),
+            _totalAirdropTokens
+        );
+
+        emit AirdropDeployed(
+            tokenAddress,
+            msg.sender,
+            address(airdrop),
+            _totalAirdropTokens
+        );
     }
 }
