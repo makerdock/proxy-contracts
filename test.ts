@@ -36,8 +36,6 @@ async function main() {
         salt
     )
 
-    console.log(creation.hash)
-
     const receipt = await creation.wait()
 
     console.log(receipt.transactionHash)
