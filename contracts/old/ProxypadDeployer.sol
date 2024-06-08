@@ -41,7 +41,7 @@ contract Token is ERC20 {
     }
 }
 
-contract ProxypadDeployer is Ownable(msg.sender) {
+contract ProxypadDeployerOld is Ownable(msg.sender) {
     // 2.5% tax
     address internal TAX_RECIPIENT = 0xeba814370974756Ab572D9e804187fd72A2Ab58a;
 

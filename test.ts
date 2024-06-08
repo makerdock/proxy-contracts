@@ -11,10 +11,10 @@ const provider = new ethers.providers.JsonRpcProvider("https://rpc.degen.tips")
 const wallet = new ethers.Wallet(privateKey, provider)
 const signer = wallet.connect(provider)
 
-const contract = new ethers.Contract("0x79F89aF6a56471fa077b7882D885E3CaE18480e4", abi, signer)
+const contract = new ethers.Contract("0x68df0bf99c85998f65fe9e4cc2110c329d3b9ecb", abi, signer)
 
 async function main() {
-    const result = await contract.WETH()
+    const result = await contract.weth()
     console.log(result)
 
     const [salt, predictedAddress] = await contract.generateSalt(
