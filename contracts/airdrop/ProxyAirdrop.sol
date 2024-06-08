@@ -9,6 +9,7 @@ contract AirdropTokens {
     IERC20 public token;
     bytes32 public rootHash;
 
+    mapping(address => bool) public isClaimed;
     event ClaimedTokens(address indexed user, uint256 amount);
 
     constructor(address tokenAddress, bytes32 _rootHash) {
@@ -20,7 +21,13 @@ contract AirdropTokens {
         uint256 _claimAmount,
         bytes32[] calldata proof
     ) public {
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _claimAmount));
+        if (isClaimed[msg.sender] == true) {
+            revert("User already claimed tokens");
+        }
+
+        bytes32 leaf = keccak256(
+            bytes.concat(keccak256(abi.encode(msg.sender, _claimAmount)))
+        );
         require(MerkleProof.verify(proof, rootHash, leaf), "Invalid proof");
         token.transfer(msg.sender, _claimAmount);
     }
