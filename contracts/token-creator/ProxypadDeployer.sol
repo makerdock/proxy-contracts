@@ -45,6 +45,9 @@ contract ProxypadDeployer is Ownable {
     uint256 internal constant OWNER_SUPPLY_DENOM = 20;
     uint256 internal constant Q96 = 1 << 96;
 
+    address public taxCollector;
+    uint8 public taxRate = 25; // 25 / 1000 -> 2.5 %
+
     // wDEGEN: 0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387
     // wETH:   0x4200000000000000000000000000000000000006
     address public weth;
@@ -69,11 +72,13 @@ contract ProxypadDeployer is Ownable {
     event TokenCreated(address tokenAddress, uint256 tokenId, address deployer);
 
     constructor(
+        address taxCollector_,
         address weth_,
         address locker_,
         address uniswapV3Factory_,
         address positionManager_
     ) Ownable(msg.sender) {
+        taxCollector = taxCollector_;
         weth = weth_;
         liquidityLocker = locker_;
         uniswapV3Factory = IUniswapV3Factory(uniswapV3Factory_);
@@ -106,12 +111,22 @@ contract ProxypadDeployer is Ownable {
         );
         require(address(token) < weth, "Invalid salt");
 
-        uint256 ownerSupply = supply - distribution - initialLiquidity;
-        token.transfer(supplyOwner, ownerSupply);
+        require(
+            supply >= initialLiquidity + distribution,
+            "Invalid supply amount"
+        );
+
+        uint256 tax = (supply * taxRate) / 1000;
+
+        uint256 ownerSupply = supply - tax - distribution - initialLiquidity;
+
+        token.transfer(taxCollector, tax);
 
         if (distribution > 0) {
             token.transfer(address(token), distribution);
         }
+
+        token.transfer(supplyOwner, ownerSupply);
 
         uint160 sqrtPriceX96 = initialTick.getSqrtRatioAtTick();
         address pool = uniswapV3Factory.createPool(address(token), weth, fee);
@@ -194,6 +209,10 @@ contract ProxypadDeployer is Ownable {
                 break;
             }
         }
+    }
+
+    function updateTaxCollector(address newCollector) external onlyOwner {
+        taxCollector = newCollector;
     }
 
     function updateLiquidityLocker(address newLocker) external onlyOwner {
