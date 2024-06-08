@@ -54,7 +54,7 @@ interface INonfungiblePositionManager is IERC721 {
     ) external payable returns (uint256 amount0, uint256 amount1);
 }
 
-interface IUniswapV3Pool {
+interface IUniswapV3Factory {
     function initialize(uint160 sqrtPriceX96) external;
 
     function createPool(
@@ -77,102 +77,130 @@ contract Token is ERC20 {
 }
 
 contract ProxypadDeployerLP {
-    using SafeERC20 for IERC20;
-    using Bytes32AddressLib for *;
     using TickMath for *;
+    using Bytes32AddressLib for *;
 
-    INonfungiblePositionManager public immutable nonfungiblePositionManager =
+    uint256 internal constant OWNER_SUPPLY_DENOM = 20; // 1/20 = 5%
+    uint256 internal constant Q96 = 1 << 96;
+
+    address public WETH = 0x4200000000000000000000000000000000000006;
+    address public liquidityLocker;
+    IUniswapV3Factory public uniswapV3Factory =
+        IUniswapV3Factory(0x33128a8fC17869897dcE68Ed026d694621f6FDfD);
+    INonfungiblePositionManager public positionManager =
         INonfungiblePositionManager(0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1);
-    IUniswapV3Pool public immutable uniswapV3Factory =
-        IUniswapV3Pool(0x33128a8fC17869897dcE68Ed026d694621f6FDfD);
-    address public immutable weth = 0x4200000000000000000000000000000000000006;
 
-    // Deployment event
-    event NewToken(
-        address indexed token,
-        address indexed creator,
-        string tokenName,
-        string tokenSymbol,
-        uint256 maxSupply
-    );
+    Deployment[] internal deployments;
+    mapping(Token token => uint256) public tokenIdOf;
 
-    address public lockerAddress;
-
-    // should be onlyOwner later
-    function updateLockerAddress(address _lockerAddress) public {
-        lockerAddress = _lockerAddress;
+    struct Deployment {
+        Token token;
+        uint256 tokenId; // ID of the Uniswap v3 position
     }
 
-    function deploy(
-        string memory _name,
-        string memory _symbol,
-        uint256 _maxSupply,
-        uint256 _liquidity,
-        uint24 _fee,
-        int24 _initialSqrtPrice,
-        bytes32 _salt,
-        address _owner
-    ) external payable returns (address, uint256) {
+    event BasecampCreated(
+        address tokenAddress,
+        uint256 tokenId,
+        address deployer
+    );
+
+    constructor(address locker_) {
+        liquidityLocker = locker_;
+    }
+
+    function createBasecamp(
+        string calldata name,
+        string calldata symbol,
+        uint256 supply,
+        address supplyOwner,
+        uint256 initialLiquidity,
+        uint256 distribution,
+        int24 initialTick,
+        uint24 fee,
+        bytes32 salt
+    ) external returns (Token token, uint256 tokenId) {
         // validate initialTick
-        int24 tickSpacing = uniswapV3Factory.feeAmountTickSpacing(_fee);
-        require(
-            tickSpacing != 0 && _initialSqrtPrice % tickSpacing == 0,
-            "TICK"
-        );
+        int24 tickSpacing = uniswapV3Factory.feeAmountTickSpacing(fee);
+        require(tickSpacing != 0 && initialTick % tickSpacing == 0, "TICK");
 
         // deploy token
         // force token to be token0 of the Uniswap pool to simplify logic
         // frontend will need to ensure the salt is unique and results in token address < WETH
-        Token token = new Token{salt: keccak256(abi.encode(msg.sender, _salt))}(
-            _name,
-            _symbol,
-            _maxSupply
+        token = new Token{salt: keccak256(abi.encode(msg.sender, salt))}(
+            name,
+            symbol,
+            supply
         );
+        require(address(token) < WETH, "SALT");
 
-        require(address(token) < weth, "SALT");
+        require(supply >= distribution + initialLiquidity, "MAX_SUPPLY");
 
         // transfer ownerSupply to supplyOwner
-        uint256 ownerSupply = _maxSupply - _liquidity;
-        token.transfer(_owner, ownerSupply);
+        uint256 ownerSupply = supply - distribution - initialLiquidity;
+        token.transfer(supplyOwner, ownerSupply);
+
+        if (distribution > 0) {
+            token.transfer(address(token), distribution);
+        }
 
         // create Uniswap v3 pool for token/WETH pair
         {
-            uint160 sqrtPriceX96 = _initialSqrtPrice.getSqrtRatioAtTick();
+            uint160 sqrtPriceX96 = initialTick.getSqrtRatioAtTick();
             address pool = uniswapV3Factory.createPool(
                 address(token),
-                weth,
-                _fee
+                WETH,
+                fee
             );
-            IUniswapV3Pool(pool).initialize(sqrtPriceX96);
+            IUniswapV3Factory(pool).initialize(sqrtPriceX96);
         }
 
         // use remaining tokens to mint liquidity
         INonfungiblePositionManager.MintParams
             memory params = INonfungiblePositionManager.MintParams(
                 address(token),
-                weth,
-                _fee,
-                _initialSqrtPrice,
+                WETH,
+                fee,
+                initialTick,
                 maxUsableTick(tickSpacing),
-                _liquidity,
+                initialLiquidity,
                 0,
                 0,
                 0,
                 address(this),
                 block.timestamp
             );
-        token.approve(address(nonfungiblePositionManager), _liquidity);
-        (uint256 lpTokenId, , , ) = nonfungiblePositionManager.mint(params);
+        token.approve(address(positionManager), initialLiquidity);
+        (tokenId, , , ) = positionManager.mint(params);
 
-        nonfungiblePositionManager.safeTransferFrom(
+        // safe transfer position NFT to locker
+        positionManager.safeTransferFrom(
             address(this),
-            lockerAddress,
-            lpTokenId
+            address(liquidityLocker),
+            tokenId,
+            abi.encode(supplyOwner)
         );
 
-        emit NewToken(address(token), msg.sender, _name, _symbol, _maxSupply);
+        deployments.push(Deployment({token: token, tokenId: tokenId}));
+        tokenIdOf[token] = tokenId;
 
-        return (address(token), lpTokenId);
+        emit BasecampCreated(address(token), tokenId, msg.sender);
+    }
+
+    /// @notice Query deployments at indices [startIdx, endIdx)
+    function queryDeployments(
+        uint256 startIdx,
+        uint256 endIdx
+    ) external view returns (Deployment[] memory) {
+        require(startIdx < endIdx && endIdx <= deployments.length, "INDEX");
+        Deployment[] memory result = new Deployment[](endIdx - startIdx);
+        for (uint256 i = startIdx; i < endIdx; i++) {
+            result[i - startIdx] = deployments[i];
+        }
+        return result;
+    }
+
+    function numDeployments() external view returns (uint256) {
+        return deployments.length;
     }
 
     function predictBasecamp(
@@ -207,15 +235,16 @@ contract ProxypadDeployerLP {
         for (uint256 i; ; i++) {
             salt = bytes32(i);
             token = predictBasecamp(deployer, name, symbol, supply, salt);
-            if (token < weth && token.code.length == 0) {
+            if (token < WETH && token.code.length == 0) {
                 break;
             }
         }
     }
+}
 
-    function maxUsableTick(int24 tickSpacing) public pure returns (int24) {
-        unchecked {
-            return (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
-        }
+/// @notice Given a tickSpacing, compute the maximum usable tick
+function maxUsableTick(int24 tickSpacing) pure returns (int24) {
+    unchecked {
+        return (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
     }
 }
