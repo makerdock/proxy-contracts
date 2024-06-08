@@ -132,6 +132,16 @@
                 "internalType": "bytes32",
                 "name": "salt",
                 "type": "bytes32"
+            },
+            {
+                "internalType": "uint256",
+                "name": "distribution",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "rootHash",
+                "type": "bytes32"
             }
         ],
         "name": "deployToken",
@@ -171,6 +181,11 @@
                 "internalType": "uint256",
                 "name": "supply",
                 "type": "uint256"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "rootHash",
+                "type": "bytes32"
             }
         ],
         "name": "generateSalt",
@@ -249,6 +264,11 @@
                 "internalType": "uint256",
                 "name": "supply",
                 "type": "uint256"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "rootHash",
+                "type": "bytes32"
             },
             {
                 "internalType": "bytes32",

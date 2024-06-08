@@ -17,9 +17,11 @@ contract Token is ERC20 {
     constructor(
         string memory name_,
         string memory symbol_,
-        uint256 maxSupply_
+        uint256 maxSupply_,
+        bytes32 rootHash_
     ) ERC20(name_, symbol_) {
         _mint(msg.sender, maxSupply_);
+        rootHash = rootHash_;
     }
 
     function decimals() public view virtual override returns (uint8) {
@@ -86,7 +88,9 @@ contract ProxypadDeployer is Ownable {
         uint256 initialLiquidity,
         int24 initialTick,
         uint24 fee,
-        bytes32 salt
+        bytes32 salt,
+        uint256 distribution,
+        bytes32 rootHash
     ) external returns (Token token, uint256 tokenId) {
         int24 tickSpacing = uniswapV3Factory.feeAmountTickSpacing(fee);
         require(
@@ -97,12 +101,17 @@ contract ProxypadDeployer is Ownable {
         token = new Token{salt: keccak256(abi.encode(msg.sender, salt))}(
             name,
             symbol,
-            supply
+            supply,
+            rootHash
         );
         require(address(token) < weth, "Invalid salt");
 
-        uint256 ownerSupply = supply - initialLiquidity;
+        uint256 ownerSupply = supply - distribution - initialLiquidity;
         token.transfer(supplyOwner, ownerSupply);
+
+        if (distribution > 0) {
+            token.transfer(address(token), distribution);
+        }
 
         uint160 sqrtPriceX96 = initialTick.getSqrtRatioAtTick();
         address pool = uniswapV3Factory.createPool(address(token), weth, fee);
@@ -132,8 +141,9 @@ contract ProxypadDeployer is Ownable {
             abi.encode(supplyOwner)
         );
 
-        deployments.push(Deployment({token: token, tokenId: tokenId}));
         tokenIdOf[token] = tokenId;
+
+        deployments.push(Deployment({token: token, tokenId: tokenId}));
 
         emit TokenCreated(address(token), tokenId, msg.sender);
     }
@@ -143,6 +153,7 @@ contract ProxypadDeployer is Ownable {
         string calldata name,
         string calldata symbol,
         uint256 supply,
+        bytes32 rootHash,
         bytes32 salt
     ) public view returns (address) {
         bytes32 create2Salt = keccak256(abi.encode(deployer, salt));
@@ -155,7 +166,7 @@ contract ProxypadDeployer is Ownable {
                     keccak256(
                         abi.encodePacked(
                             type(Token).creationCode,
-                            abi.encode(name, symbol, supply)
+                            abi.encode(name, symbol, supply, rootHash)
                         )
                     )
                 )
@@ -166,11 +177,19 @@ contract ProxypadDeployer is Ownable {
         address deployer,
         string calldata name,
         string calldata symbol,
-        uint256 supply
+        uint256 supply,
+        bytes32 rootHash
     ) external view returns (bytes32 salt, address token) {
         for (uint256 i; ; i++) {
             salt = bytes32(i);
-            token = predictToken(deployer, name, symbol, supply, salt);
+            token = predictToken(
+                deployer,
+                name,
+                symbol,
+                supply,
+                rootHash,
+                salt
+            );
             if (token < weth && token.code.length == 0) {
                 break;
             }

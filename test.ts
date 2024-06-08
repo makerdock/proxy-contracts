@@ -11,7 +11,7 @@ const provider = new ethers.providers.JsonRpcProvider("https://rpc.degen.tips")
 const wallet = new ethers.Wallet(privateKey, provider)
 const signer = wallet.connect(provider)
 
-const contract = new ethers.Contract("0x68df0bf99c85998f65fe9e4cc2110c329d3b9ecb", abi, signer)
+const contract = new ethers.Contract("0xa4c94e283c21b6e6f00014e0e10ac7b2fc959d51", abi, signer)
 
 async function main() {
     const result = await contract.weth()
@@ -21,7 +21,8 @@ async function main() {
         signer.address,
         "ABHI",
         "ABHI",
-        1000000000000000000000000n
+        1000000000000000000000000n,
+        "0xe1e7581a239e3f0021bb65d1d58fd61a4488191f72a1b6d255083884835374b3"
     )
     console.log({ salt, predictedAddress })
 
@@ -33,7 +34,9 @@ async function main() {
         100000000000000000000000n,
         -23200,
         10000,
-        salt
+        salt,
+        1000000000000000000000n,
+        "0xe1e7581a239e3f0021bb65d1d58fd61a4488191f72a1b6d255083884835374b3"
     )
 
     const receipt = await creation.wait()
