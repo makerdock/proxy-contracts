@@ -110,3 +110,11 @@ module.exports = {
         timeout: 300000, // 300 seconds max for running tests
     },
 }
+
+// forge verify-contract \
+//     --chain-id 8453 \
+//     --watch \
+//     --etherscan-api-key DYJWHWVGMAUW3GAB1EDST9EQKTRVCRXXC9 \
+//     --compiler-version v0.8.25 \
+//     0x21945138346e06768a2Ace634463FCC434412eFc \
+//     contracts/token-creator/ProxypadDeployerLP.sol:ProxypadDeployerLP

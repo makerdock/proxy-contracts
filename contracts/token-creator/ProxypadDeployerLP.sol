@@ -96,6 +96,13 @@ contract ProxypadDeployerLP {
         uint256 maxSupply
     );
 
+    address public lockerAddress;
+
+    // should be onlyOwner later
+    function updateLockerAddress(address _lockerAddress) public {
+        lockerAddress = _lockerAddress;
+    }
+
     function deploy(
         string memory _name,
         string memory _symbol,
@@ -151,13 +158,19 @@ contract ProxypadDeployerLP {
                 0,
                 0,
                 0,
-                _owner,
+                address(this),
                 block.timestamp
             );
         token.approve(address(nonfungiblePositionManager), _liquidity);
         (uint256 lpTokenId, , , ) = nonfungiblePositionManager.mint(params);
 
-        // emit NewToken(address(token), msg.sender, _name, _symbol, _maxSupply);
+        nonfungiblePositionManager.safeTransferFrom(
+            address(this),
+            lockerAddress,
+            lpTokenId
+        );
+
+        emit NewToken(address(token), msg.sender, _name, _symbol, _maxSupply);
 
         return (address(token), lpTokenId);
     }
