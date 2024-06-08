@@ -113,18 +113,18 @@ contract ProxypadDeployerLP {
 
     // wDEGEN: 0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387
     // wETH:   0x4200000000000000000000000000000000000006
-    address public WETH = 0x4200000000000000000000000000000000000006;
+    address public WETH = 0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387;
     address public liquidityLocker;
 
     // degen: 0x652e3Dc407e951BD0aFcB0697B911e81F0dDC876
     // base:  0x33128a8fC17869897dcE68Ed026d694621f6FDfD
     IUniswapV3Factory public uniswapV3Factory =
-        IUniswapV3Factory(0x33128a8fC17869897dcE68Ed026d694621f6FDfD);
+        IUniswapV3Factory(0x652e3Dc407e951BD0aFcB0697B911e81F0dDC876);
 
     // degen: 0x56c65e35f2Dd06f659BCFe327C4D7F21c9b69C2f
     // base:  0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1
     INonfungiblePositionManager public positionManager =
-        INonfungiblePositionManager(0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1);
+        INonfungiblePositionManager(0x56c65e35f2Dd06f659BCFe327C4D7F21c9b69C2f);
 
     Deployment[] internal deployments;
     mapping(Token token => uint256) public tokenIdOf;
@@ -134,17 +134,13 @@ contract ProxypadDeployerLP {
         uint256 tokenId; // ID of the Uniswap v3 position
     }
 
-    event BasecampCreated(
-        address tokenAddress,
-        uint256 tokenId,
-        address deployer
-    );
+    event TokenCreated(address tokenAddress, uint256 tokenId, address deployer);
 
     constructor(address locker_) {
         liquidityLocker = locker_;
     }
 
-    function createBasecamp(
+    function deployToken(
         string calldata name,
         string calldata symbol,
         uint256 supply,
@@ -226,10 +222,10 @@ contract ProxypadDeployerLP {
         deployments.push(Deployment({token: token, tokenId: tokenId}));
         tokenIdOf[token] = tokenId;
 
-        emit BasecampCreated(address(token), tokenId, msg.sender);
+        emit TokenCreated(address(token), tokenId, msg.sender);
     }
 
-    function predictBasecamp(
+    function predictToken(
         address deployer,
         string calldata name,
         string calldata symbol,
@@ -260,7 +256,7 @@ contract ProxypadDeployerLP {
     ) external view returns (bytes32 salt, address token) {
         for (uint256 i; ; i++) {
             salt = bytes32(i);
-            token = predictBasecamp(deployer, name, symbol, supply, salt);
+            token = predictToken(deployer, name, symbol, supply, salt);
             if (token < WETH && token.code.length == 0) {
                 break;
             }
