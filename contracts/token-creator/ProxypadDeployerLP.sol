@@ -4,7 +4,7 @@ pragma solidity ^0.8.25;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {Bytes32AddressLib} from "./Bytes32AddressLib.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
@@ -104,7 +104,7 @@ contract Token is ERC20 {
     }
 }
 
-contract ProxypadDeployerLP {
+contract ProxypadDeployerLP is Ownable(msg.sender) {
     using TickMath for *;
     using Bytes32AddressLib for *;
 
@@ -261,6 +261,10 @@ contract ProxypadDeployerLP {
                 break;
             }
         }
+    }
+
+    function updateLiquidityLocker(address locker_) external onlyOwner {
+        liquidityLocker = locker_;
     }
 }
 

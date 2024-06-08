@@ -19,19 +19,19 @@ async function main() {
 
     const [salt, predictedAddress] = await contract.generateSalt(
         signer.address,
-        "TEST",
-        "TEST",
-        1000000000000000000000n
+        "ABHI",
+        "ABHI",
+        1000000000000000000000000n
     )
     console.log({ salt, predictedAddress })
 
     const creation = await contract.deployToken(
-        "TEST",
-        "TEST",
-        1000000000000000000000n,
+        "ABHI",
+        "ABHI",
+        1000000000000000000000000n,
         signer.address,
-        10000000000000000000n,
-        -53000,
+        100000000000000000000000n,
+        -23200,
         10000,
         salt
     )
