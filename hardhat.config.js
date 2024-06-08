@@ -12,6 +12,7 @@ const COMPILER_SETTINGS = {
         enabled: true,
         runs: 200,
     },
+    viaIR: true,
     metadata: {
         bytecodeHash: "none",
     },
@@ -27,18 +28,20 @@ const FORKING_BLOCK_NUMBER = parseInt(process.env.FORKING_BLOCK_NUMBER) || 0
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "Your etherscan API key"
 const REPORT_GAS = process.env.REPORT_GAS || false
 
-const BASE = "https://base.llamarpc.com"
+const BASE = "https://1rpc.io/base"
 const BASE_SEPOLIA_ETH_BROWSER = "https://sepolia.basescan.org/"
 const BASE_SEPOLIA_ETH = "https://base-sepolia.blockpi.network/v1/rpc/public"
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
     solidity: {
-        compilers: [
-            {
-                version: "0.8.25",
-                COMPILER_SETTINGS,
-            },
-        ],
+        version: "0.8.25",
+        ...COMPILER_SETTINGS,
+        // compilers: [
+        //     {
+        //         version: "0.8.25",
+        //         COMPILER_SETTINGS,
+        //     },
+        // ],
     },
     allowUnlimitedContractSize: true,
     networks: {
@@ -107,3 +110,11 @@ module.exports = {
         timeout: 300000, // 300 seconds max for running tests
     },
 }
+
+// forge verify-contract \
+//     --chain-id 8453 \
+//     --watch \
+//     --etherscan-api-key DYJWHWVGMAUW3GAB1EDST9EQKTRVCRXXC9 \
+//     --compiler-version v0.8.25 \
+//     0x21945138346e06768a2Ace634463FCC434412eFc \
+//     contracts/token-creator/liquidity-locker/LiquidityLocker.sol
