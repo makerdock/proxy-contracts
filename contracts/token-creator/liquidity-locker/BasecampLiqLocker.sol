@@ -52,7 +52,7 @@ contract LiquidityLocker is Owned, ERC721TokenReceiver {
     uint256 internal constant WAD = 1e18;
 
     INonfungiblePositionManager public immutable positionManager =
-        INonfungiblePositionManager(0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1);
+        INonfungiblePositionManager(0x56c65e35f2Dd06f659BCFe327C4D7F21c9b69C2f);
 
     uint96 public protocolFeeWad;
     address public protocolFeeRecipient;
