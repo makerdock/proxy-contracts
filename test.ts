@@ -11,7 +11,7 @@ const provider = new ethers.providers.JsonRpcProvider("https://rpc.degen.tips")
 const wallet = new ethers.Wallet(privateKey, provider)
 const signer = wallet.connect(provider)
 
-const contract = new ethers.Contract("0xa4c94e283c21b6e6f00014e0e10ac7b2fc959d51", abi, signer)
+const contract = new ethers.Contract("0x419928F7388D368127015C2267d27837E3564798", abi, signer)
 
 async function main() {
     const result = await contract.weth()
