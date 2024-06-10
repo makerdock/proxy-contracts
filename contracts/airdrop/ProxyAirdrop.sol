@@ -29,6 +29,9 @@ contract AirdropTokens {
             bytes.concat(keccak256(abi.encode(msg.sender, _claimAmount)))
         );
         require(MerkleProof.verify(proof, rootHash, leaf), "Invalid proof");
+
+        isClaimed[msg.sender] = true;
+
         token.transfer(msg.sender, _claimAmount);
     }
 }
