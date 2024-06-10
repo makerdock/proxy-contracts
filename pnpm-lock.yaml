@@ -14,6 +14,9 @@ importers:
       '@openzeppelin/contracts':
         specifier: ^5.0.2
         version: 5.0.2
+      '@openzeppelin/merkle-tree':
+        specifier: ^1.0.6
+        version: 1.0.6
       '@prb/math':
         specifier: ^4.0.2
         version: 4.0.2
@@ -453,6 +456,9 @@ packages:
 
   '@openzeppelin/contracts@5.0.2':
     resolution: {integrity: sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA==}
+
+  '@openzeppelin/merkle-tree@1.0.6':
+    resolution: {integrity: sha512-cGWOb2WBWbJhqvupzxjnKAwGLxxAEYPg51sk76yZ5nVe5D03mw7Vx5yo8llaIEqYhP5O39M8QlrNWclgLfKVrA==}
 
   '@prb/math@4.0.2':
     resolution: {integrity: sha512-kJgqvXR6iyU7+N959RzggSFhBdnRuSDnc/bs8u6MzdWw7aYIUaAr+uMVdpP6Dheypjerd7sfJgFOs19FRFhscg==}
@@ -2978,6 +2984,11 @@ snapshots:
   '@openzeppelin/contracts@3.4.2-solc-0.7': {}
 
   '@openzeppelin/contracts@5.0.2': {}
+
+  '@openzeppelin/merkle-tree@1.0.6':
+    dependencies:
+      '@ethersproject/abi': 5.7.0
+      ethereum-cryptography: 1.2.0
 
   '@prb/math@4.0.2': {}
 

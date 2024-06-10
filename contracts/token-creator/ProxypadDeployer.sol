@@ -20,7 +20,7 @@ contract Token is ERC20 {
         uint256 maxSupply_,
         bytes32 rootHash_
     ) ERC20(name_, symbol_) {
-        _mint(msg.sender, maxSupply_);
+        _mint(msg.sender, maxSupply_); // Mint to msg.sender (TokenDeployer)
         rootHash = rootHash_;
     }
 
@@ -28,13 +28,20 @@ contract Token is ERC20 {
         return 18;
     }
 
-    function claimTokens(uint256 claimAmount, bytes32[] calldata proof) public {
-        require(!isClaimed[msg.sender], "User already claimed tokens");
+    function claimTokens(
+        uint256 _claimAmount,
+        bytes32[] calldata proof
+    ) public {
+        if (isClaimed[msg.sender] == true) {
+            revert("User already claimed tokens");
+        }
 
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender, claimAmount));
+        bytes32 leaf = keccak256(
+            bytes.concat(keccak256(abi.encode(msg.sender, _claimAmount)))
+        );
         require(MerkleProof.verify(proof, rootHash, leaf), "Invalid proof");
         isClaimed[msg.sender] = true;
-        IERC20(address(this)).transfer(msg.sender, claimAmount);
+        IERC20(address(this)).transfer(msg.sender, _claimAmount);
     }
 }
 
