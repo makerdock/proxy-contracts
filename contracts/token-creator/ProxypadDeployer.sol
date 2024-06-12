@@ -245,6 +245,10 @@ contract ProxypadDeployer is Ownable {
     function updateDefaultLockingPeriod(uint64 newPeriod) external onlyOwner {
         defaultLockingPeriod = newPeriod;
     }
+
+    function updateProtocolFees(uint8 newFee) external onlyOwner {
+        lpFeesCut = newFee;
+    }
 }
 
 /// @notice Given a tickSpacing, compute the maximum usable tick
