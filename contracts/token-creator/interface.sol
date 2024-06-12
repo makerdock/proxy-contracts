@@ -49,8 +49,7 @@ interface INonfungiblePositionManager {
     function safeTransferFrom(
         address from,
         address to,
-        uint256 tokenId,
-        bytes calldata data
+        uint256 tokenId
     ) external;
 }
 
@@ -74,4 +73,8 @@ interface ILockerFactory {
         uint256 tokenId,
         uint256 fees
     ) external payable returns (address);
+}
+
+interface ILocker {
+    function initializer(uint256 tokenId) external;
 }

@@ -8,7 +8,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {Bytes32AddressLib} from "./Bytes32AddressLib.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 
-import {INonfungiblePositionManager, IUniswapV3Factory, ILockerFactory} from "./interface.sol";
+import {INonfungiblePositionManager, IUniswapV3Factory, ILockerFactory, ILocker} from "./interface.sol";
 
 contract Token is ERC20 {
     bytes32 private rootHash;
@@ -157,15 +157,9 @@ contract ProxypadDeployer is Ownable {
                 address(this),
                 block.timestamp
             );
+
         token.approve(address(positionManager), initialLiquidity);
         (tokenId, , , ) = positionManager.mint(params);
-
-        positionManager.safeTransferFrom(
-            address(this),
-            address(liquidityLocker),
-            tokenId,
-            abi.encode(supplyOwner)
-        );
 
         address lockerAddress = liquidityLocker.deploy(
             address(token),
@@ -174,6 +168,10 @@ contract ProxypadDeployer is Ownable {
             tokenId,
             3
         );
+
+        positionManager.safeTransferFrom(address(this), lockerAddress, tokenId);
+
+        ILocker(lockerAddress).initializer(tokenId);
 
         emit TokenCreated(
             address(token),

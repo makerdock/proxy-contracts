@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-interface NonFungibleContract {
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+
+interface NonFungibleContract is IERC721 {
     /// @notice Returns the position information associated with a given token ID.
     /// @dev Throws if the token ID is not valid.
     /// @param tokenId The ID of the token that represents the position
