@@ -111,10 +111,10 @@ module.exports = {
     },
 }
 
-// forge verify-contract \
-//     --chain-id 8453 \
-//     --watch \
-//     --etherscan-api-key DYJWHWVGMAUW3GAB1EDST9EQKTRVCRXXC9 \
-//     --compiler-version v0.8.25 \
-//     0x21945138346e06768a2Ace634463FCC434412eFc \
-//     contracts/token-creator/liquidity-locker/LiquidityLocker.sol
+// forge verify-contract --chain-id 666666666 --watch --etherscan-api-key DYJWHWVGMAUW3GAB1EDST9EQKTRVCRXXC9 --compiler-version v0.8.25 0x3CF367cD41eb3AB372bd8000D364729Ec9E67F87 contracts/lp-locker/LpLocker.sol:LpLocker --constructor-args 0x56c65e35f2dd06f659bcfe327c4d7f21c9b69c2f 0x122a73fb6ad4398e93a16dd15bb37843ee26d5a9 1718202470 0 0x122a73fb6ad4398e93a16dd15bb37843ee26d5a9
+
+// address token,
+//         address beneficiary,
+//         uint64 durationSeconds,
+//         uint256 fee,
+//         address feeRecipient
