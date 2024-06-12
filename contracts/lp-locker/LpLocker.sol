@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./IManager.sol";
+import {NonFungibleContract} from "./IManager.sol";
 
 interface INonfungiblePositionManager is IERC721 {
     struct CollectParams {
@@ -28,6 +28,16 @@ contract LpLocker is Context, Ownable {
 
     event LockDuration(uint256 _time);
 
+    event ClaimedFees(
+        address indexed claimer,
+        address indexed token0,
+        address indexed token1,
+        uint256 amount0,
+        uint256 amount1,
+        uint256 totalAmount1,
+        uint256 totalAmount0
+    );
+
     uint256 private _released;
     mapping(address => uint256) public _erc721Released;
     IERC721 private SafeERC721;
@@ -36,6 +46,8 @@ contract LpLocker is Context, Ownable {
     bool private flag;
     NonFungibleContract private positionManager;
     string public constant version = "0.0.1";
+    uint256 public _fee;
+    address public _feeRecipient;
 
     /**
      * @dev Sets the sender as the initial owner, the beneficiary as the pending owner, and the duration for the lock
@@ -44,13 +56,17 @@ contract LpLocker is Context, Ownable {
     constructor(
         address token,
         address beneficiary,
-        uint64 durationSeconds
+        uint64 durationSeconds,
+        uint256 fee,
+        address feeRecipient
     ) payable Ownable(beneficiary) {
         _duration = durationSeconds;
         SafeERC721 = IERC721(token);
         //already false but lets be safe
         flag = false;
         e721Token = token;
+        _fee = fee;
+        _feeRecipient = feeRecipient;
         emit LockDuration(durationSeconds);
     }
 
@@ -145,16 +161,79 @@ contract LpLocker is Context, Ownable {
             ,
             INonfungiblePositionManager nonfungiblePositionManager
         ) = _getAddresses();
-        nonfungiblePositionManager.collect(
-            INonfungiblePositionManager.CollectParams({
-                recipient: _recipient,
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max,
-                tokenId: _tokenId
-            })
-        );
-    }
 
+        if (_fee == 0) {
+            (uint256 amount0, uint256 amount1) = nonfungiblePositionManager
+                .collect(
+                    INonfungiblePositionManager.CollectParams({
+                        recipient: _recipient,
+                        amount0Max: type(uint128).max,
+                        amount1Max: type(uint128).max,
+                        tokenId: _tokenId
+                    })
+                );
+
+            emit ClaimedFees(
+                _recipient,
+                address(0),
+                address(0),
+                amount0,
+                amount1,
+                amount0,
+                amount1
+            );
+        } else {
+            (uint256 amount0, uint256 amount1) = nonfungiblePositionManager
+                .collect(
+                    INonfungiblePositionManager.CollectParams({
+                        recipient: address(this),
+                        amount0Max: type(uint128).max,
+                        amount1Max: type(uint128).max,
+                        tokenId: _tokenId
+                    })
+                );
+
+            (
+                ,
+                ,
+                address token0,
+                address token1,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+
+            ) = positionManager.positions(_tokenId);
+
+            IERC20 feeToken0 = IERC20(token0);
+            IERC20 feeToken1 = IERC20(token1);
+
+            uint256 protocolFee0 = (amount0 * _fee) / 100;
+            uint256 protocolFee1 = (amount1 * _fee) / 100;
+
+            uint256 recipientFee0 = amount0 - protocolFee0;
+            uint256 recipientFee1 = amount1 - protocolFee1;
+
+            feeToken0.transfer(_recipient, recipientFee0);
+            feeToken1.transfer(_recipient, recipientFee1);
+
+            feeToken0.transfer(_feeRecipient, protocolFee0);
+            feeToken1.transfer(_feeRecipient, protocolFee1);
+
+            emit ClaimedFees(
+                _recipient,
+                token0,
+                token1,
+                recipientFee0,
+                recipientFee1,
+                amount0,
+                amount1
+            );
+        }
+    }
     /**
      * Checks the vesting schedule for the token
      */

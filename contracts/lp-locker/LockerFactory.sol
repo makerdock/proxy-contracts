@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
-import "./LpLocker.sol";
+import {LpLocker} from "./LpLocker.sol";
 
-contract LockerFactory {
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+contract LockerFactory is Ownable(msg.sender) {
     event deployed(
         address indexed lockerAddress,
         address indexed owner,
@@ -11,17 +13,29 @@ contract LockerFactory {
         uint256 lockingPeriod
     );
 
-    //maps the owner to the amount of contract deployed
+    address public feeRecipient;
+
     mapping(address owner => address[] addresses) public owner_addresses;
+
+    constructor() {
+        feeRecipient = msg.sender;
+    }
 
     function deploy(
         address token,
         address beneficiary,
         uint64 durationSeconds,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256 fees
     ) public payable returns (address) {
         address newLockerAddress = address(
-            new LpLocker(token, beneficiary, durationSeconds)
+            new LpLocker(
+                token,
+                beneficiary,
+                durationSeconds,
+                fees,
+                feeRecipient
+            )
         );
 
         if (newLockerAddress == address(0)) {
@@ -36,6 +50,10 @@ contract LockerFactory {
         emit deployed(newLockerAddress, msg.sender, tokenId, durationSeconds);
 
         return newLockerAddress;
+    }
+
+    function setFeeRecipient(address _feeRecipient) public onlyOwner {
+        feeRecipient = _feeRecipient;
     }
 }
 
