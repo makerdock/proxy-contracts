@@ -76,7 +76,15 @@ contract ProxypadDeployer is Ownable {
     Deployment[] internal deployments;
     mapping(Token => uint256) public tokenIdOf;
 
-    event TokenCreated(address tokenAddress, uint256 tokenId, address deployer);
+    event TokenCreated(
+        address tokenAddress,
+        uint256 lpNftId,
+        address deployer,
+        string name,
+        string symbol,
+        uint256 supply,
+        uint256 initialLiquidity
+    );
 
     constructor(
         address taxCollector_,
@@ -167,7 +175,15 @@ contract ProxypadDeployer is Ownable {
 
         deployments.push(Deployment({token: token, tokenId: tokenId}));
 
-        emit TokenCreated(address(token), tokenId, msg.sender);
+        emit TokenCreated(
+            address(token),
+            tokenId,
+            msg.sender,
+            name,
+            symbol,
+            supply,
+            initialLiquidity
+        );
     }
 
     function predictToken(
