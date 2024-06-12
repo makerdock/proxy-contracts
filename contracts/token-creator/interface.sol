@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
-
-interface INonfungiblePositionManager is IERC721 {
+interface INonfungiblePositionManager {
     struct MintParams {
         address token0;
         address token1;
@@ -47,6 +45,13 @@ interface INonfungiblePositionManager is IERC721 {
     function collect(
         CollectParams calldata params
     ) external payable returns (uint256 amount0, uint256 amount1);
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes calldata data
+    ) external;
 }
 
 interface IUniswapV3Factory {
@@ -59,4 +64,14 @@ interface IUniswapV3Factory {
     ) external returns (address pool);
 
     function feeAmountTickSpacing(uint24 fee) external view returns (int24);
+}
+
+interface ILockerFactory {
+    function deploy(
+        address token,
+        address beneficiary,
+        uint64 durationSeconds,
+        uint256 tokenId,
+        uint256 fees
+    ) external payable returns (address);
 }
