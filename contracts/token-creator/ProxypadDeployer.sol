@@ -55,6 +55,7 @@ contract ProxypadDeployer is Ownable {
     address public taxCollector;
     uint8 public taxRate = 25; // 25 / 1000 -> 2.5 %
     uint64 public defaultLockingPeriod = 33275115461;
+    uint8 public lpFeesCut = 3; // 3 / 100 -> 3%
     ILockerFactory public liquidityLocker;
 
     // wDEGEN: 0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387
@@ -166,7 +167,7 @@ contract ProxypadDeployer is Ownable {
             supplyOwner,
             defaultLockingPeriod,
             tokenId,
-            3
+            lpFeesCut
         );
 
         positionManager.safeTransferFrom(address(this), lockerAddress, tokenId);
