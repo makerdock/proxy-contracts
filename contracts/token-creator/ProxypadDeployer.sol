@@ -162,7 +162,7 @@ contract ProxypadDeployer is Ownable {
         (tokenId, , , ) = positionManager.mint(params);
 
         address lockerAddress = liquidityLocker.deploy(
-            address(token),
+            address(positionManager),
             supplyOwner,
             defaultLockingPeriod,
             tokenId,
