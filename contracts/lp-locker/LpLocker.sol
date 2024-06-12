@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {NonFungibleContract} from "./IManager.sol";
 
 interface INonfungiblePositionManager is IERC721 {
@@ -21,12 +22,13 @@ interface INonfungiblePositionManager is IERC721 {
     ) external payable returns (uint256 amount0, uint256 amount1);
 }
 
-contract LpLocker is Context, Ownable {
+contract LpLocker is Ownable, IERC721Receiver {
     event ERC721Released(address indexed token, uint256 amount);
 
     event LockId(uint256 _id);
 
     event LockDuration(uint256 _time);
+    event Received(address indexed from, uint256 tokenId);
 
     event ClaimedFees(
         address indexed claimer,
@@ -75,7 +77,11 @@ contract LpLocker is Context, Ownable {
         _erc721Released[e721Token] = token_id;
         flag = true;
         positionManager = NonFungibleContract(e721Token);
-        SafeERC721.transferFrom(owner(), address(this), token_id);
+
+        if (positionManager.ownerOf(token_id) != address(this)) {
+            SafeERC721.transferFrom(owner(), address(this), token_id);
+        }
+
         emit LockId(token_id);
     }
 
@@ -243,5 +249,16 @@ contract LpLocker is Context, Ownable {
         } else {
             return duration() - block.timestamp;
         }
+    }
+
+    function onERC721Received(
+        address,
+        address from,
+        uint256 id,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        emit Received(from, id);
+
+        return IERC721Receiver.onERC721Received.selector;
     }
 }

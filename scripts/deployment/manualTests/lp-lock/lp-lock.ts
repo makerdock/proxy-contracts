@@ -14,7 +14,7 @@ const provider = new ethers.providers.JsonRpcProvider("https://rpc.degen.tips")
 const wallet = new ethers.Wallet(privateKey, provider)
 const signer = wallet.connect(provider)
 
-const factoryContractAddress = "0x053898aB911CDE9C1979a57922002EaD5906f574"
+const factoryContractAddress = "0x91C12d01AdD8B213B694ef74A38F413F5BB085b7"
 // const lpLockerAddress = "0x3cf367cd41eb3ab372bd8000d364729ec9e67f87"
 const nftManagerAddress = "0x56c65e35f2dd06f659bcfe327c4d7f21c9b69c2f"
 
@@ -47,17 +47,22 @@ async function main() {
 
     console.log("Locker address", formattedDeployAddress)
 
-    const nftApproval = await nftManagerContract.approve(formattedDeployAddress, nftId)
+    // const nftApproval = await nftManagerContract.approve(formattedDeployAddress, nftId)
+    const nftApproval = await nftManagerContract.transferFrom(
+        signer.address,
+        formattedDeployAddress,
+        nftId
+    )
     const nftApprovalReceipt = await nftApproval.wait()
 
     console.log("NFT approved", nftApprovalReceipt.transactionHash)
 
     const lockerInstance = lockerContract(formattedDeployAddress)
 
-    const lockerTx = await lockerInstance.initializer(nftId)
-    const lockerReceipt = await lockerTx.wait()
+    // const lockerTx = await lockerInstance.initializer(nftId)
+    // const lockerReceipt = await lockerTx.wait()
 
-    console.log("Locker initialized", lockerReceipt.transactionHash)
+    // console.log("Locker initialized", lockerReceipt.transactionHash)
 }
 
 async function canRelease() {
@@ -66,8 +71,24 @@ async function canRelease() {
     console.log("Can release", canRelease)
 }
 
+async function contractDetails() {
+    const lockerInstance = lockerContract("0xdee806c0808b323d51a03198bcc2b98c7379356a")
+
+    // const initFlag = await lockerInstance.flag()
+    // console.log("Details", initFlag)
+
+    const owner = await lockerInstance.owner()
+    console.log("Owner", owner)
+}
+
+async function initializer() {
+    const lockerInstance = lockerContract("0x7E11701B57e583c3e3b830fec50F05e2aE4D137E")
+    const canRelease = await lockerInstance.initializer(815)
+    console.log("Can release", canRelease)
+}
+
 async function release() {
-    const lockerInstance = lockerContract("0xF3423648C83d844d961bdEb5D9dFd82E801c9004")
+    const lockerInstance = lockerContract("0xbf3446fafA7A1557b468100F45f5372813708d0D")
 
     const canRelease = await lockerInstance.vestingSchedule()
     console.log("Can release", canRelease.toString())
@@ -85,4 +106,6 @@ async function release() {
 
 // main()
 // canRelease()
-release()
+// release()
+initializer()
+// contractDetails()
