@@ -18,7 +18,7 @@ const factoryContractAddress = "0x053898aB911CDE9C1979a57922002EaD5906f574"
 // const lpLockerAddress = "0x3cf367cd41eb3ab372bd8000d364729ec9e67f87"
 const nftManagerAddress = "0x56c65e35f2dd06f659bcfe327c4d7f21c9b69c2f"
 
-const nftId = 816
+const nftId = 815
 
 const contract = new ethers.Contract(factoryContractAddress, abi, signer)
 const nftManagerContract = new ethers.Contract(nftManagerAddress, nftmanagerAbi, signer)
@@ -33,7 +33,7 @@ async function main() {
         signer.address,
         epochDuration,
         nftId,
-        0
+        3
     )
     const contractReceipt = await contractTx.wait()
 
@@ -61,13 +61,13 @@ async function main() {
 }
 
 async function canRelease() {
-    const lockerInstance = lockerContract("0x586Caa88af36cDb274bf7028Cb92c58249E423f4")
+    const lockerInstance = lockerContract("0xF3423648C83d844d961bdEb5D9dFd82E801c9004")
     const canRelease = await lockerInstance.vestingSchedule()
-    console.log("Can release", canRelease.toString())
+    console.log("Can release", canRelease)
 }
 
 async function release() {
-    const lockerInstance = lockerContract("0x586Caa88af36cDb274bf7028Cb92c58249E423f4")
+    const lockerInstance = lockerContract("0xF3423648C83d844d961bdEb5D9dFd82E801c9004")
 
     const canRelease = await lockerInstance.vestingSchedule()
     console.log("Can release", canRelease.toString())
