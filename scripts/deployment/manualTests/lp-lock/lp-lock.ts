@@ -10,7 +10,7 @@ if (!privateKey) {
     throw new Error("PRIVATE_KEY is not set")
 }
 
-const provider = new ethers.providers.JsonRpcProvider("https://1rpc.io/base")
+const provider = new ethers.providers.JsonRpcProvider("https://rpc.degen.tips")
 const wallet = new ethers.Wallet(privateKey, provider)
 const signer = wallet.connect(provider)
 
@@ -82,8 +82,8 @@ async function contractDetails() {
 }
 
 async function initializer() {
-    const lockerInstance = lockerContract("0x6E5213c24ae3915aC3bBDd349fc473687c047070")
-    const canRelease = await lockerInstance.initializer(123)
+    const lockerInstance = lockerContract("0x32a58a4983A4D267C97376263281cB475807e4cA")
+    const canRelease = await lockerInstance.owner()
     console.log("Can release", canRelease)
 }
 

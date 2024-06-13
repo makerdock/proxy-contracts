@@ -47,7 +47,7 @@ contract LockerFactory is Ownable(msg.sender) {
 
         owner_addresses[beneficiary] = addresses;
 
-        emit deployed(newLockerAddress, msg.sender, tokenId, durationSeconds);
+        emit deployed(newLockerAddress, beneficiary, tokenId, durationSeconds);
 
         return newLockerAddress;
     }
