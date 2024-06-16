@@ -49,12 +49,9 @@ contract ProxypadDeployer is Ownable {
     using TickMath for int24;
     using Bytes32AddressLib for bytes32;
 
-    uint256 internal constant OWNER_SUPPLY_DENOM = 20;
-    uint256 internal constant Q96 = 1 << 96;
-
     address public taxCollector;
-    uint8 public taxRate = 25; // 25 / 1000 -> 2.5 %
     uint64 public defaultLockingPeriod = 33275115461;
+    uint8 public taxRate = 25; // 25 / 1000 -> 2.5 %
     uint8 public lpFeesCut = 3; // 3 / 100 -> 3%
     ILockerFactory public liquidityLocker;
 
@@ -248,6 +245,10 @@ contract ProxypadDeployer is Ownable {
 
     function updateProtocolFees(uint8 newFee) external onlyOwner {
         lpFeesCut = newFee;
+    }
+
+    function updateTaxRate(uint8 newRate) external onlyOwner {
+        taxRate = newRate;
     }
 }
 
