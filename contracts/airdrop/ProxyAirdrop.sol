@@ -6,14 +6,14 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract AirdropTokens {
-    IERC20 public token;
+    address public token;
     bytes32 public rootHash;
 
     mapping(address => bool) public isClaimed;
     event ClaimedTokens(address indexed user, uint256 amount);
 
     constructor(address tokenAddress, bytes32 _rootHash) {
-        token = IERC20(tokenAddress);
+        token = tokenAddress;
         rootHash = _rootHash;
     }
 
@@ -32,7 +32,14 @@ contract AirdropTokens {
 
         isClaimed[msg.sender] = true;
 
-        token.transfer(msg.sender, _claimAmount);
+        if (token == address(0)) {
+            (bool success, ) = msg.sender.call{value: _claimAmount}("");
+            require(success, "Transfer failed");
+        } else {
+            IERC20(token).transfer(msg.sender, _claimAmount);
+        }
+
+        emit ClaimedTokens(msg.sender, _claimAmount);
     }
 }
 
@@ -50,14 +57,22 @@ contract ProxyAirdrop is Ownable {
         address tokenAddress,
         bytes32 _rootHash,
         uint256 _totalAirdropTokens
-    ) public {
+    ) public payable {
         AirdropTokens airdrop = new AirdropTokens(tokenAddress, _rootHash);
 
-        IERC20(tokenAddress).transferFrom(
-            msg.sender,
-            address(airdrop),
-            _totalAirdropTokens
-        );
+        if (tokenAddress == address(0)) {
+            require(msg.value == _totalAirdropTokens, "Invalid amount");
+            (bool success, ) = address(airdrop).call{
+                value: _totalAirdropTokens
+            }("");
+            require(success, "Transfer failed");
+        } else {
+            IERC20(tokenAddress).transferFrom(
+                msg.sender,
+                address(airdrop),
+                _totalAirdropTokens
+            );
+        }
 
         emit AirdropDeployed(
             tokenAddress,

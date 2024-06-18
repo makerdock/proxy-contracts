@@ -40,7 +40,7 @@ const erc20ABI = [
 ]
 
 const airdropTokenAddress = "0xde0f23f3475e0227d68e3e4caed1c409b652b443"
-const airdropContractAddress = "0xAD99efC3cAD45867F5B7c529Cb7b5e6eCFD1d95B"
+const airdropContractAddress = "0xf627e018e01b706f4a6a060c56c358eea82b7214"
 
 const contract = new ethers.Contract(airdropContractAddress, abi, signer)
 const erc20Contract = new ethers.Contract(airdropTokenAddress, erc20ABI, signer)
@@ -72,7 +72,7 @@ const generateAllProofs = (data) => {
 }
 
 const addresses = [
-    ["0x122a73fb6ad4398e93a16dd15bb37843ee26d5a9", 10000000000000000000n],
+    [signer.address, 10000000000000000000n],
     ["0xB1C2eCe930c84709Fb484D19d81381637a848d94", 10000000000000000000n],
 ]
 
@@ -96,21 +96,28 @@ async function main() {
 
     const transaction = await contractTx.wait()
 
-    console.log("Airdrop contract deployed", transaction)
+    console.log("Airdrop contract deployed", transaction.transactionHash)
 
     const { logs } = transaction
     const tokenAirdropLog = logs[logs.length - 1]
     const { topics } = tokenAirdropLog
     const addressWithZeros = topics[topics.length - 1]
-    const airdropAddress = ethers.utils.defaultAbiCoder.decode(["address"], addressWithZeros)
+    const [airdropAddress] = ethers.utils.defaultAbiCoder.decode(["address"], addressWithZeros)
 
-    console.log({
-        airdropAddress,
-    })
+    console.log("airdropAddress", airdropAddress)
+
+    const claimingContract = claimAirdropContract(airdropAddress)
+
+    const merkleHash = await claimingContract.rootHash()
+    const claimingToken = await claimingContract.token()
+
+    console.log("Merkle Hash", merkleHash)
+    console.log("Claiming Token", claimingToken)
+    console.log("Proof", proofs[signer.address], proofs)
 
     const claimTx = await claimAirdropContract(airdropAddress).claimTokens(
         10000000000000000000n,
-        proofs["0x122A73Fb6ad4398e93A16dD15Bb37843eE26d5a9"]
+        proofs[signer.address]
     )
 
     const claimTransaction = await claimTx.wait()
