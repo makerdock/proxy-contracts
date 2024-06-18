@@ -40,7 +40,8 @@ const erc20ABI = [
 ]
 
 const airdropTokenAddress = "0xde0f23f3475e0227d68e3e4caed1c409b652b443"
-const airdropContractAddress = "0xf627e018e01b706f4a6a060c56c358eea82b7214"
+// const airdropTokenAddress = "0x0000000000000000000000000000000000000000"
+const airdropContractAddress = "0x4C3C0A1C2dA3B5C01A4669963E9c9cdc07246e09"
 
 const contract = new ethers.Contract(airdropContractAddress, abi, signer)
 const erc20Contract = new ethers.Contract(airdropTokenAddress, erc20ABI, signer)
@@ -72,8 +73,8 @@ const generateAllProofs = (data) => {
 }
 
 const addresses = [
-    [signer.address, 10000000000000000000n],
-    ["0xB1C2eCe930c84709Fb484D19d81381637a848d94", 10000000000000000000n],
+    [signer.address, 1000000000000000000n],
+    ["0xB1C2eCe930c84709Fb484D19d81381637a848d94", 1000000000000000000n],
 ]
 
 const merkleRoot = createMerkleTrees(addresses)
@@ -81,7 +82,7 @@ const merkleRoot = createMerkleTrees(addresses)
 const proofs = generateAllProofs(addresses)
 
 async function main() {
-    const tx = await erc20Contract.approve(airdropContractAddress, 100000000000000000000n)
+    const tx = await erc20Contract.approve(airdropContractAddress, 10000000000000000000n)
     const { transactionHash } = await tx.wait()
 
     console.log("Approved ERC20 tokens", transactionHash)
@@ -91,7 +92,11 @@ async function main() {
     const contractTx = await contract.deployAirdrop(
         airdropTokenAddress,
         merkleRoot,
-        20000000000000000000n
+        2000000000000000000n,
+        {
+            value: 0,
+            gasLimit: 1000000,
+        }
     )
 
     const transaction = await contractTx.wait()
@@ -116,7 +121,7 @@ async function main() {
     console.log("Proof", proofs[signer.address], proofs)
 
     const claimTx = await claimAirdropContract(airdropAddress).claimTokens(
-        10000000000000000000n,
+        1000000000000000000n,
         proofs[signer.address]
     )
 

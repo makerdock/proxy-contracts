@@ -17,6 +17,8 @@ contract AirdropTokens {
         rootHash = _rootHash;
     }
 
+    receive() external payable {}
+
     function claimTokens(
         uint256 _claimAmount,
         bytes32[] calldata proof
