@@ -55,16 +55,19 @@ contract ProxypadDeployer is Ownable {
     uint8 public lpFeesCut = 3; // 3 / 100 -> 3%
     ILockerFactory public liquidityLocker;
 
-    // wDEGEN: 0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387
-    // wETH:   0x4200000000000000000000000000000000000006
+    // wDEGEN:     0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387
+    // wETH:       0x4200000000000000000000000000000000000006
+    // wETH (ham): 0x4200000000000000000000000000000000000006
     address public weth;
 
     // degen: 0x652e3Dc407e951BD0aFcB0697B911e81F0dDC876
     // base:  0x33128a8fC17869897dcE68Ed026d694621f6FDfD
+    // ham:   0x6bA5888ACa5CfAebdF3c9ace64581c3Aa86e564c
     IUniswapV3Factory public uniswapV3Factory;
 
     // degen: 0x56c65e35f2Dd06f659BCFe327C4D7F21c9b69C2f
     // base:  0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1
+    // ham:   0xD088322Fa988225B3936555894E1D21c1A727859
     INonfungiblePositionManager public positionManager;
 
     event TokenCreated(
