@@ -7,15 +7,15 @@ if (!privateKey) {
     throw new Error("PRIVATE_KEY is not set")
 }
 
-const provider = new ethers.providers.JsonRpcProvider("https://rpc.degen.tips")
+const provider = new ethers.providers.JsonRpcProvider("https://rpc.ham.fun")
 const wallet = new ethers.Wallet(privateKey, provider)
 const signer = wallet.connect(provider)
 
-const contract = new ethers.Contract("0x0624a9962c6d59aeB1A3932dc5E7f331995CB901", abi, signer)
+const contract = new ethers.Contract("0xC9A3b9562697281C33c265e47F96f7c19e37b9a9", abi, signer)
 
 async function main() {
     const result = await contract.weth()
-    console.log(result)
+    console.log({ result })
 
     const [salt, predictedAddress] = await contract.generateSalt(
         signer.address,

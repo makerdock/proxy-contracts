@@ -56,9 +56,3 @@ contract LockerFactory is Ownable(msg.sender) {
         feeRecipient = _feeRecipient;
     }
 }
-
-/*
-
-forge create --rpc-url https://rpc.degen.tips --private-key 0x234784c482f83dba9e5f60cb597a4c324b591f1a6e48c8553bc046dbddac451f contracts/lp-locker/LockerFactory.sol:LockerFactory --via-ir --verify --etherscan-api-key DYJWHWVGMAUW3GAB1EDST9EQKTRVCRXXC9
-
-*/

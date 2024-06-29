@@ -1,0 +1,8 @@
+[profile.local]
+# ETHERSCAN_API_KEY = "DYJWHWVGMAUW3GAB1EDST9EQKTRVCRXXC9"
+
+[etherscan]
+mainnet = { key = "DYJWHWVGMAUW3GAB1EDST9EQKTRVCRXXC9" }
+mainnet2 = { key = "ABCDEFG", chain = "mainnet" }
+5112 = { key = "ABCDEFG", url = "https://ham.calderachain.xyz/http" }
+

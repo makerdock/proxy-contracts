@@ -10,15 +10,15 @@ if (!privateKey) {
     throw new Error("PRIVATE_KEY is not set")
 }
 
-const provider = new ethers.providers.JsonRpcProvider("https://rpc.degen.tips")
+const provider = new ethers.providers.JsonRpcProvider("https://ham.calderachain.xyz/http")
 const wallet = new ethers.Wallet(privateKey, provider)
 const signer = wallet.connect(provider)
 
-const factoryContractAddress = "0x91C12d01AdD8B213B694ef74A38F413F5BB085b7"
+const factoryContractAddress = "0x8E38F63BE3D9fB1B79D0DA3F17f3A56deBA7080D"
 // const lpLockerAddress = "0x3cf367cd41eb3ab372bd8000d364729ec9e67f87"
-const nftManagerAddress = "0x56c65e35f2dd06f659bcfe327c4d7f21c9b69c2f"
+const nftManagerAddress = "0xD088322Fa988225B3936555894E1D21c1A727859"
 
-const nftId = 815
+const nftId = 23
 
 const contract = new ethers.Contract(factoryContractAddress, abi, signer)
 const nftManagerContract = new ethers.Contract(nftManagerAddress, nftmanagerAbi, signer)
@@ -28,13 +28,30 @@ const currentEpochTime = Math.floor(Date.now() / 1000)
 const epochDuration = currentEpochTime + 60
 
 async function main() {
+    const feeReceiver = await contract.feeRecipient()
+
+    console.log({
+        feeReceiver,
+        nftManagerAddress,
+        signer: signer.address,
+        epochDuration,
+        nftId,
+    })
+
     const contractTx = await contract.deploy(
         nftManagerAddress,
         signer.address,
         epochDuration,
         nftId,
-        3
+        0
+        // {
+        //     gasPrice: ethers.BigNumber.from("1000000"),
+        //     gasLimit: ethers.BigNumber.from("1000000"),
+        // }
     )
+
+    console.log("Deploying locker from factory", contractTx.hash)
+
     const contractReceipt = await contractTx.wait()
 
     console.log("Locker deployed from factory", contractReceipt.transactionHash)
@@ -66,13 +83,13 @@ async function main() {
 }
 
 async function canRelease() {
-    const lockerInstance = lockerContract("0xF3423648C83d844d961bdEb5D9dFd82E801c9004")
+    const lockerInstance = lockerContract("0x3319302fA48Dc721c1697f596fc0C3E06DA9B45D")
     const canRelease = await lockerInstance.vestingSchedule()
-    console.log("Can release", canRelease)
+    console.log("Can release", canRelease.toString())
 }
 
 async function contractDetails() {
-    const lockerInstance = lockerContract("0xdee806c0808b323d51a03198bcc2b98c7379356a")
+    const lockerInstance = lockerContract("0x3319302fA48Dc721c1697f596fc0C3E06DA9B45D")
 
     // const initFlag = await lockerInstance.flag()
     // console.log("Details", initFlag)
@@ -82,21 +99,21 @@ async function contractDetails() {
 }
 
 async function initializer() {
-    const lockerInstance = lockerContract("0x32a58a4983A4D267C97376263281cB475807e4cA")
-    const canRelease = await lockerInstance.owner()
+    const lockerInstance = lockerContract("0x3319302fA48Dc721c1697f596fc0C3E06DA9B45D")
+    const canRelease = await lockerInstance.initializer(nftId)
     console.log("Can release", canRelease)
 }
 
 async function release() {
-    const lockerInstance = lockerContract("0xbf3446fafA7A1557b468100F45f5372813708d0D")
+    const lockerInstance = lockerContract("0x3319302fA48Dc721c1697f596fc0C3E06DA9B45D")
 
     const canRelease = await lockerInstance.vestingSchedule()
     console.log("Can release", canRelease.toString())
 
-    const collectFees = await lockerInstance.collectFees(signer.address, nftId)
-    const collectFeesReceipt = await collectFees.wait()
+    // const collectFees = await lockerInstance.collectFees(signer.address, nftId)
+    // const collectFeesReceipt = await collectFees.wait()
 
-    console.log("Fees collected", collectFeesReceipt.transactionHash)
+    // console.log("Fees collected", collectFeesReceipt.transactionHash)
 
     const releaseTx = await lockerInstance.release()
     const releaseReceipt = await releaseTx.wait()
@@ -104,8 +121,8 @@ async function release() {
     console.log("Released", releaseReceipt.transactionHash)
 }
 
-// main()
+main()
+// initializer()
 // canRelease()
 // release()
-initializer()
 // contractDetails()
