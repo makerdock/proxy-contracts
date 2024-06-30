@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -156,6 +156,14 @@ contract LpLocker is Ownable, IERC721Receiver {
             weth = 0xEb54dACB4C2ccb64F8074eceEa33b5eBb38E5387;
             nonFungiblePositionManager = INonfungiblePositionManager( // proxy swap
                 0x56c65e35f2Dd06f659BCFe327C4D7F21c9b69C2f
+            );
+        }
+
+        if (chainId == 5112) {
+            // wrapped ETH
+            weth = 0x4200000000000000000000000000000000000006;
+            nonFungiblePositionManager = INonfungiblePositionManager( // proxy swap
+                0xD088322Fa988225B3936555894E1D21c1A727859
             );
         }
     }

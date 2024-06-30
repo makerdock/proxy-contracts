@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.26;
 
 import {LpLocker} from "./LpLocker.sol";
 
@@ -14,8 +14,6 @@ contract LockerFactory is Ownable(msg.sender) {
     );
 
     address public feeRecipient;
-
-    mapping(address owner => address[] addresses) public owner_addresses;
 
     constructor() {
         feeRecipient = msg.sender;
@@ -41,11 +39,6 @@ contract LockerFactory is Ownable(msg.sender) {
         if (newLockerAddress == address(0)) {
             revert("Invalid address");
         }
-
-        address[] storage addresses = owner_addresses[beneficiary];
-        addresses.push(newLockerAddress);
-
-        owner_addresses[beneficiary] = addresses;
 
         emit deployed(newLockerAddress, beneficiary, tokenId, durationSeconds);
 
