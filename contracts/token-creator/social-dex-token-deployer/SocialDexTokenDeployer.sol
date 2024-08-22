@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Bytes32AddressLib} from "../Bytes32AddressLib.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import {INonfungiblePositionManager, IUniswapV3Factory, ILockerFactory, ILocker} from "../interface.sol";
+import {Bytes32AddressLib} from "../Bytes32AddressLib.sol";
 
 contract Token is ERC20 {
     constructor(
@@ -75,8 +75,9 @@ contract SocialDexDeployer is Ownable {
         int24 _initialTick,
         uint24 _fee,
         bytes32 _salt,
-        address _deployer
-    ) external returns (Token token, uint256 tokenId) {
+        address _deployer,
+        uint256 _amountOut
+    ) external payable returns (Token token, uint256 tokenId) {
         int24 tickSpacing = uniswapV3Factory.feeAmountTickSpacing(_fee);
 
         require(
@@ -134,20 +135,20 @@ contract SocialDexDeployer is Ownable {
         ILocker(lockerAddress).initializer(tokenId);
 
         if (msg.value > 0) {
-            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+            ISwapRouter.ExactInputSingleParams memory swapParams = ISwapRouter
                 .ExactInputSingleParams({
                     tokenIn: weth, // The token we are exchanging from (ETH wrapped as WETH)
-                    tokenOut: DAI, // The token we are exchanging to
-                    fee: poolFee, // The pool fee
-                    recipient: recipient, // The recipient address
+                    tokenOut: address(token), // The token we are exchanging to
+                    fee: 0, // The pool fee
+                    recipient: msg.sender, // The recipient address
                     deadline: block.timestamp, // The deadline for the swap
                     amountIn: msg.value, // The amount of ETH (WETH) to be swapped
-                    amountOutMinimum: amountOutMin, // Minimum amount of DAI to receive
+                    amountOutMinimum: _amountOut, // Minimum amount of DAI to receive
                     sqrtPriceLimitX96: 0 // No price limit
                 });
 
             // The call to `exactInputSingle` executes the swap.
-            swapRouter.exactInputSingle{value: msg.value}(params);
+            swapRouter.exactInputSingle{value: msg.value}(swapParams);
         }
 
         emit TokenCreated(

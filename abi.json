@@ -3,6 +3,11 @@
         "inputs": [
             {
                 "internalType": "address",
+                "name": "taxCollector_",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
                 "name": "weth_",
                 "type": "address"
             },
@@ -19,6 +24,16 @@
             {
                 "internalType": "address",
                 "name": "positionManager_",
+                "type": "address"
+            },
+            {
+                "internalType": "uint64",
+                "name": "defaultLockingPeriod_",
+                "type": "uint64"
+            },
+            {
+                "internalType": "address",
+                "name": "swapRouter_",
                 "type": "address"
             }
         ],
@@ -78,7 +93,7 @@
             {
                 "indexed": false,
                 "internalType": "uint256",
-                "name": "tokenId",
+                "name": "lpNftId",
                 "type": "uint256"
             },
             {
@@ -86,62 +101,100 @@
                 "internalType": "address",
                 "name": "deployer",
                 "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "symbol",
+                "type": "string"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "supply",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "initialLiquidity",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "lockerAddress",
+                "type": "address"
             }
         ],
         "name": "TokenCreated",
         "type": "event"
     },
     {
+        "inputs": [],
+        "name": "defaultLockingPeriod",
+        "outputs": [
+            {
+                "internalType": "uint64",
+                "name": "",
+                "type": "uint64"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "string",
-                "name": "name",
+                "name": "_name",
                 "type": "string"
             },
             {
                 "internalType": "string",
-                "name": "symbol",
+                "name": "_symbol",
                 "type": "string"
             },
             {
                 "internalType": "uint256",
-                "name": "supply",
+                "name": "_supply",
                 "type": "uint256"
             },
             {
-                "internalType": "address",
-                "name": "supplyOwner",
-                "type": "address"
-            },
-            {
                 "internalType": "uint256",
-                "name": "initialLiquidity",
+                "name": "_ownerSupply",
                 "type": "uint256"
             },
             {
                 "internalType": "int24",
-                "name": "initialTick",
+                "name": "_initialTick",
                 "type": "int24"
             },
             {
                 "internalType": "uint24",
-                "name": "fee",
+                "name": "_fee",
                 "type": "uint24"
             },
             {
                 "internalType": "bytes32",
-                "name": "salt",
+                "name": "_salt",
                 "type": "bytes32"
+            },
+            {
+                "internalType": "address",
+                "name": "_deployer",
+                "type": "address"
             },
             {
                 "internalType": "uint256",
-                "name": "distribution",
+                "name": "_amountOut",
                 "type": "uint256"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "rootHash",
-                "type": "bytes32"
             }
         ],
         "name": "deployToken",
@@ -157,7 +210,7 @@
                 "type": "uint256"
             }
         ],
-        "stateMutability": "nonpayable",
+        "stateMutability": "payable",
         "type": "function"
     },
     {
@@ -181,11 +234,6 @@
                 "internalType": "uint256",
                 "name": "supply",
                 "type": "uint256"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "rootHash",
-                "type": "bytes32"
             }
         ],
         "name": "generateSalt",
@@ -209,9 +257,22 @@
         "name": "liquidityLocker",
         "outputs": [
             {
-                "internalType": "address",
+                "internalType": "contract ILockerFactory",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "lpFeesCut",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
             }
         ],
         "stateMutability": "view",
@@ -267,11 +328,6 @@
             },
             {
                 "internalType": "bytes32",
-                "name": "rootHash",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "bytes32",
                 "name": "salt",
                 "type": "bytes32"
             }
@@ -295,19 +351,39 @@
         "type": "function"
     },
     {
-        "inputs": [
+        "inputs": [],
+        "name": "swapRouter",
+        "outputs": [
             {
-                "internalType": "contract Token",
+                "internalType": "contract ISwapRouter",
                 "name": "",
                 "type": "address"
             }
         ],
-        "name": "tokenIdOf",
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "taxCollector",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "address",
                 "name": "",
-                "type": "uint256"
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "taxRate",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
             }
         ],
         "stateMutability": "view",
@@ -342,12 +418,64 @@
     {
         "inputs": [
             {
+                "internalType": "uint64",
+                "name": "newPeriod",
+                "type": "uint64"
+            }
+        ],
+        "name": "updateDefaultLockingPeriod",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "address",
                 "name": "newLocker",
                 "type": "address"
             }
         ],
         "name": "updateLiquidityLocker",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint8",
+                "name": "newFee",
+                "type": "uint8"
+            }
+        ],
+        "name": "updateProtocolFees",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newCollector",
+                "type": "address"
+            }
+        ],
+        "name": "updateTaxCollector",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint8",
+                "name": "newRate",
+                "type": "uint8"
+            }
+        ],
+        "name": "updateTaxRate",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
